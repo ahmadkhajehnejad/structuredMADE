@@ -25,9 +25,9 @@ data_name = 'grid'
 ## grid configs
 width = 4
 height = 4
-related_size = width
 
 ## mnist configs
+
 
 
 
@@ -40,6 +40,12 @@ m_boltzmann = 10
 if data_name == 'grid':
     graph_size = width * height
 elif data_name == 'mnist':
-    graph_size = 28*28
+    graph_size = 28*28 
 elif data_name == 'Boltzmann':
     graph_size = n_boltzmann + m_boltzmann
+
+##############
+if data_name == 'grid':
+    related_size = width
+elif data_name == 'mnist':
+    related_size = 28
