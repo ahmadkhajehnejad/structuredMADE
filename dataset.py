@@ -31,16 +31,33 @@ def _get_Ising_data(args):
     #test_data = all_outcomes[prob_of_outcomes > 0][:]
     #test_data_probs = prob_of_outcomes[prob_of_outcomes > 0]
     
-    return {'train_data' : train_data, 
-            'train_data_probs' : train_data_probs,  
+    return {'train_data' : train_data,
+            'train_data_probs' : train_data_probs,
             'valid_data' : valid_data,
             'valid_data_probs' : valid_data_probs,
             'test_data' : test_data,
             'test_data_probs' : test_data_probs}
 
 def _get_mnist_data(args):
-    return None
 
+    with np.load('datasets/binary_mnist_1.npz') as dataset:
+        data = np.copy(dataset['train_data'])
+        np.random.shuffle(data)
+        train_data = data[0:train_length][:]
+        np.random.shuffle(data)
+        valid_data = data[0:valid_length][:]
+        data = np.copy(dataset['test_data'])
+        np.random.shuffle(data)
+        test_data = data[0:test_length][:]
+    train_data_probs = None
+    valid_data_probs = None
+    test_data_probs = None
+    return {'train_data' : train_data,
+            'train_data_probs' : train_data_probs,
+            'valid_data' : valid_data,
+            'valid_data_probs' : valid_data_probs,
+            'test_data' : test_data,
+            'test_data_probs' : test_data_probs}
 
 def get_data(args):
     if config.data_name == 'grid':
