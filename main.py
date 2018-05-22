@@ -12,7 +12,7 @@ def evaluate(pred_log_probs, true_probs=None):
         if config.test_size == 'FULL_TEST':
             KL = -1*np.sum(np.multiply(true_probs, (pred_log_probs - np.log(true_probs))))
         else:
-            KL = -1*np.sum(pred_log_probs - np.log(true_probs))
+            KL = -1*np.mean(pred_log_probs - np.log(true_probs))
         return [NLL, KL]
     return [NLL, None]
     
