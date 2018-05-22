@@ -80,4 +80,4 @@ def gen_params(args):
                  graph_size = len(w_v)
                  )
 #gen_params({'data_name' : 'grid', 'height' : 4, 'width' : 4})
-gen_params({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10})
+#gen_params({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10})
