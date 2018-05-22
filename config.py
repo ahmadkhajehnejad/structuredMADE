@@ -40,6 +40,6 @@ m_boltzmann = 10
 if data_name == 'grid':
     graph_size = width * height
 elif data_name == 'mnist':
-    graph_size == 28*28
+    graph_size = 28*28
 elif data_name == 'Boltzmann':
-    graph_size == n_boltzmann + m_boltzmann
+    graph_size = n_boltzmann + m_boltzmann
