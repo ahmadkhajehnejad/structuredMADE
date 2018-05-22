@@ -9,7 +9,10 @@ import sys
 def evaluate(pred_log_probs, true_probs=None):
     NLL = -1*np.mean(pred_log_probs)
     if true_probs is not None:
-        KL = -1*np.sum(np.multiply(true_probs, (pred_log_probs - np.log(true_probs))))
+        if config.test_size == 'FULL_TEST':
+            KL = -1*np.sum(np.multiply(true_probs, (pred_log_probs - np.log(true_probs))))
+        else:
+            KL = -1*np.sum(pred_log_probs - np.log(true_probs))
         return [NLL, KL]
     return [NLL, None]
     
@@ -27,11 +30,11 @@ def execute_one_round():
         args['m'] = config.m_boltzmann
         
     data = get_data(args)
-    
+        
     model.fit(data['train_data'], data['valid_data'])
-    
+        
     pred = model.predict(data['test_data'])
-    
+        
     res = dict()    
     res['NLL'], res['KL'] = evaluate(pred, data['test_data_probs'])
     print('KL: ' + str(res['KL']), file=sys.stderr)

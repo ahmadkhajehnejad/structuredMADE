@@ -4,70 +4,30 @@ import config
 def _get_Ising_data(args):
     
     with np.load(args['parameters_file']) as parameters:
-        w_v = parameters['vertex_parameters']
-        w_e = parameters['edge_parameters']
-    graph_size = len(w_v)
-        
-    all_outcomes = np.ndarray(shape=(2**graph_size, graph_size), dtype=np.float32)
-    prob_of_outcomes = np.ndarray(shape=(2**graph_size), dtype=np.float32)
-                
+        all_outcomes = parameters['all_outcomes']
+        prob_of_outcomes = parameters['prob_of_outcomes']
+        cum_probs = parameters['cum_probs']
     
-    for k in range(2**graph_size):
-        str_samp = ('{0:0' + str(graph_size) + 'b}').format(k)
-        asarr_samp = [int(d) for d in str_samp]
-        all_outcomes[k][:] = asarr_samp
-        energy = -np.inner(w_v, asarr_samp)
-        energy -= np.matmul(np.array(asarr_samp).reshape([1,-1]), np.matmul(w_e, np.array(asarr_samp).reshape([-1,1])))
-        #energy = np.inner(w_v, asarr_samp)
-        #energy += np.matmul(np.array(asarr_samp).reshape([1,-1]), np.matmul(w_e, np.array(asarr_samp).reshape([-1,1])))
-        p = np.exp(energy)
-        prob_of_outcomes[k] = p
+
+    p = np.random.uniform(0,1,args['train_size'])
+    ind = np.searchsorted(cum_probs, p)
+    train_data = all_outcomes[ind,:]
+    train_data_probs = prob_of_outcomes[ind]           
+
+    p = np.random.uniform(0,1,args['validation_size'])
+    ind = np.searchsorted(cum_probs, p)
+    valid_data = all_outcomes[ind,:]
+    valid_data_probs = prob_of_outcomes[ind]        
     
-    sum_prob = sum(prob_of_outcomes)
-    prob_of_outcomes = np.divide(prob_of_outcomes, sum_prob)
-    
-    cum_probs = []
-    s = 0
-    for x in prob_of_outcomes:
-        s = s + x
-        cum_probs.append(s)
-    cum_probs[-1] = 1.
-    
-    
-    train_data = np.ndarray(shape=(args['train_size'], graph_size), dtype=np.float32)
-    train_data_probs = np.ndarray(shape=(args['train_size']), dtype=np.float32)
-    for x in range(args['train_size']):
-        p = np.random.uniform(0,1)
-        i = np.searchsorted(cum_probs, p)
-        train_data[x][:] = all_outcomes[i]
-        train_data_probs[x] = prob_of_outcomes[i]
-    
-    
-    
-    valid_data = np.ndarray(shape=(args['validation_size'], graph_size), dtype=np.float32)
-    valid_data_probs = np.ndarray(shape=(args['validation_size']), dtype=np.float32)
-    for x in range(args['validation_size']):
-        p = np.random.uniform(0,1)
-        i = np.searchsorted(cum_probs, p)
-        valid_data[x][:] = all_outcomes[i]
-        valid_data_probs[x] = prob_of_outcomes[i]
-        
-    
-    if args['full_test'] == True:
+    if args['test_size'] == 'FULL_TEST':
         test_data = all_outcomes.copy()
         test_data_probs = prob_of_outcomes.copy()
     else:
-        test_data = np.ndarray(shape=(args['test_size'], graph_size), dtype=np.float32)
-        test_data_probs = np.ndarray(shape=(args['test_size']), dtype=np.float32)
-        for x in range(args['test_size']):
-            
-            if np.mod(x,100) == 0:
-                print('         ' + str(x))
-            
-            p = np.random.uniform(0,1)
-            i = np.searchsorted(cum_probs, p)
-            test_data[x][:] = all_outcomes[i]
-        test_data_probs[x] = prob_of_outcomes[i]
+        p = np.random.uniform(0,1,args['test_size'])
+        ind = np.searchsorted(cum_probs, p)
+        test_data = all_outcomes[ind,:]
+        test_data_probs = prob_of_outcomes[ind]
+
     #test_data = all_outcomes[prob_of_outcomes > 0][:]
     #test_data_probs = prob_of_outcomes[prob_of_outcomes > 0]
     
@@ -85,11 +45,9 @@ def _get_mnist_data(args):
 def get_data(args):
     if config.data_name == 'grid':
         args['parameters_file'] = 'dataset_parameters/grid' + str(config.height) + 'by' + str(config.width) + '_parameters.npz'
-        args['full_test'] = True
         return _get_Ising_data(args)
     elif config.data_name == 'Boltzmann':
         args['parameters_file'] = 'dataset_parameters/Boltzman_' + str(config.n_boltzmann) + ',' + str(config.m_boltzmann) + '_parameters.npz'
-        args['full_test'] = True
         return _get_Ising_data(args)
     elif config.data_name == 'mnist':
         return _get_mnist_data(args)
