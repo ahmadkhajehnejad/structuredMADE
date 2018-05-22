@@ -33,12 +33,12 @@ class MADE:
         if self.masking_method == 'Q_restricted':
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
-        self.all_masks = self.generate_all_masks(related_size=config.related_size)
+        self.all_masks = self.generate_all_masks()
         
         self.autoencoder = self.build_autoencoder()
         self.train_end_epochs = []
 
-    def generate_all_masks(self, related_size=None):
+    def generate_all_masks(self):
         if self.masking_method == 'Q_restricted':
             all_masks = []
             ### We can change it
@@ -119,9 +119,11 @@ class MADE:
                         if (self.masking_method == 'orig'):
                             if (labels[0][j] >= k): #and (pi[k] >= labels[0][j]-width)):
                                 mask[k][j] = 1.0
-                        else:
-                            if ((labels[0][j] >= k) and (k - related_size <= labels[0][j])): #cant use permutation in our approach
+                        elif self.masking_method == 'min_related':
+                            if ((labels[0][j] >= k) and (k - config.related_size <= labels[0][j])): #cant use permutation in our approach
                                 mask[k][j] = 1.0
+                        else:
+                            print("wrong masking method " + self.masking_method)
                 masks.append(mask)
                 
                 #hidden layers mask   
@@ -132,9 +134,12 @@ class MADE:
                             if (self.masking_method == 'orig'):
                                 if (labels[i][j] >= labels[i-1][k]): #and (labels[i][j] >= labels[i-1][k]-width)):
                                     mask[k][j] = 1.0
-                            else:
-                                if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - related_size <= labels[i-1][k] )):
+                            elif self.masking_method == 'min_related':
+                                if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - config.related_size <= labels[i-1][k] )):
                                     mask[k][j] = 1.0
+                            else:
+                                print("wrong masking method " + self.masking_methdo)
+
                     masks.append(mask)
                 
                 #last layer mask
@@ -146,10 +151,10 @@ class MADE:
                             if (j > labels[-1][k]): #and (j >= labels[-1][k]-width)):
                                 mask[k][j] = 1.0
                         elif (self.masking_method == 'min_related'):
-                            if ((j > labels[-1][k]) and (j - related_size <= labels[-1][k])):
+                            if ((j > labels[-1][k]) and (j - config.related_size <= labels[-1][k])):
                                 mask[k][j] = 1.0
                         else:
-                            print('wrong masking method' + self.masking_method)
+                            print("wrong masking method " + self.masking_method)
                 masks.append(mask)
                 all_masks.append(masks)
         
