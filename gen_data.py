@@ -1,7 +1,5 @@
 import numpy as np
 from keras.datasets import mnist
-from PIL import Image
-
 
 def _gen_Ising_data(args):
     
