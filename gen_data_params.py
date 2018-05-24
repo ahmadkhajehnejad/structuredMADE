@@ -71,7 +71,7 @@ def gen_params(args):
                 w_e[i,n+j] = w_e[n+j,i] = param
                 
         all_outcomes, prob_of_outcomes, cum_probs = _get_Ising_data_params(w_v, w_e)
-        np.savez('dataset_parameters/Boltzman_' + str(n) + ',' + str(m) + '_parameters.npz',
+        np.savez('dataset_parameters/Boltzman_' + str(n) + '&' + str(m) + '_parameters.npz',
                  edge_parameters = w_e,
                  vertex_parameters = w_v,
                  all_outcomes = all_outcomes,
@@ -79,5 +79,7 @@ def gen_params(args):
                  cum_probs = cum_probs,
                  graph_size = len(w_v)
                  )
+        
+        
 #gen_params({'data_name' : 'grid', 'height' : 4, 'width' : 4})
 #gen_params({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10})

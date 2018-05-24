@@ -1,57 +1,38 @@
 import numpy as np
 import config
 
-def _get_Ising_data(args):
+def _get_data_from_file(args):
     
-    with np.load(args['parameters_file']) as parameters:
+    with np.load(args['data_file']) as parameters:
+        
         all_outcomes = parameters['all_outcomes']
         prob_of_outcomes = parameters['prob_of_outcomes']
-        cum_probs = parameters['cum_probs']
-    
-
-    p = np.random.uniform(0,1,args['train_size'])
-    ind = np.searchsorted(cum_probs, p)
-    train_data = all_outcomes[ind,:]
-    train_data_probs = prob_of_outcomes[ind]           
-
-    p = np.random.uniform(0,1,args['validation_size'])
-    ind = np.searchsorted(cum_probs, p)
-    valid_data = all_outcomes[ind,:]
-    valid_data_probs = prob_of_outcomes[ind]        
-    
-    if args['test_size'] == 'FULL_TEST':
-        test_data = all_outcomes.copy()
-        test_data_probs = prob_of_outcomes.copy()
-    else:
-        p = np.random.uniform(0,1,args['test_size'])
-        ind = np.searchsorted(cum_probs, p)
-        test_data = all_outcomes[ind,:]
-        test_data_probs = prob_of_outcomes[ind]
-
-    #test_data = all_outcomes[prob_of_outcomes > 0][:]
-    #test_data_probs = prob_of_outcomes[prob_of_outcomes > 0]
-    
-    return {'train_data' : train_data,
-            'train_data_probs' : train_data_probs,
-            'valid_data' : valid_data,
-            'valid_data_probs' : valid_data_probs,
-            'test_data' : test_data,
-            'test_data_probs' : test_data_probs}
-
-def _get_mnist_data(args):
-
-    with np.load('datasets/binary_mnist_1.npz') as dataset:
-        data = np.copy(dataset['train_data'])
-        np.random.shuffle(data)
-        train_data = data[0:train_length][:]
-        np.random.shuffle(data)
-        valid_data = data[0:valid_length][:]
-        data = np.copy(dataset['test_data'])
-        np.random.shuffle(data)
-        test_data = data[0:test_length][:]
-    train_data_probs = None
-    valid_data_probs = None
-    test_data_probs = None
+        
+        data = parameters['train_data']
+        data_probs = parameters['train_data_probs']
+        
+        train_data = data[0:args['train_size']]
+        valid_data = data[args['train_size']:(args['train_size']+args['valid_size'])]
+        
+        if data_probs is not None:
+            train_data_probs = data_probs[0:args['train_size']]
+            valid_data_probs = data_probs[args['train_size']:(args['train_size']+args['valid_size'])]
+        else:
+            train_data_probs = None
+            valid_data_probs = None
+        
+        if args['test_size'] == 'FULL_TEST':
+            test_data = all_outcomes
+            test_data_probs = prob_of_outcomes
+        else:
+            data = parameters['test_data']
+            data_probs = parameters['test_data_probs']
+            test_data = data[0:args['test_size']]
+            if data_probs is not None:
+                test_data_probs = data_probs[0:args['test_size']]
+            else:
+                test_data_probs = None
+            
     return {'train_data' : train_data,
             'train_data_probs' : train_data_probs,
             'valid_data' : valid_data,
@@ -60,17 +41,18 @@ def _get_mnist_data(args):
             'test_data_probs' : test_data_probs}
 
 def get_data(args):
-    if config.data_name == 'grid':
-        args['parameters_file'] = 'dataset_parameters/grid' + str(config.height) + 'by' + str(config.width) + '_parameters.npz'
-        return _get_Ising_data(args)
-    elif config.data_name == 'Boltzmann':
-        args['parameters_file'] = 'dataset_parameters/Boltzman_' + str(config.n_boltzmann) + ',' + str(config.m_boltzmann) + '_parameters.npz'
-        return _get_Ising_data(args)
-    elif config.data_name == 'mnist':
-        return _get_mnist_data(args)
+    if args['data_name'] == 'grid':
+        args['data_file'] = 'datasets/grid' + str(args['height']) + 'by' + str(args['width']) + '.npz'
+        return _get_data_from_file(args)
+    elif args['data_name'] == 'Boltzmann':
+        args['data_file'] = 'datasets/Boltzman_' + str(args['n']) + '&' + str(args['m']) + '.npz'
+        return _get_data_from_file(args)
+    elif args['data_name'] == 'mnist':
+        args['data_file'] = 'datasets/binary_mnist'+ str(args['digit']) + '.npz'
+        return _get_data_from_file(args)
     else:
         return None
-                
+
 
 def get_data_structure():
     parameters = dict()
