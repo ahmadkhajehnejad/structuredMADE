@@ -14,7 +14,8 @@ def _get_data_from_file(args):
         train_data = data[0:args['train_size']]
         valid_data = data[args['train_size']:(args['train_size']+args['valid_size'])]
         
-        if data_probs is not None:
+        
+        if data_probs != None:
             train_data_probs = data_probs[0:args['train_size']]
             valid_data_probs = data_probs[args['train_size']:(args['train_size']+args['valid_size'])]
         else:
@@ -28,7 +29,7 @@ def _get_data_from_file(args):
             data = parameters['test_data']
             data_probs = parameters['test_data_probs']
             test_data = data[0:args['test_size']]
-            if data_probs is not None:
+            if data_probs != None:
                 test_data_probs = data_probs[0:args['test_size']]
             else:
                 test_data_probs = None
@@ -48,7 +49,7 @@ def get_data(args):
         args['data_file'] = 'datasets/Boltzman_' + str(args['n']) + '&' + str(args['m']) + '.npz'
         return _get_data_from_file(args)
     elif args['data_name'] == 'mnist':
-        args['data_file'] = 'datasets/binary_mnist'+ str(args['digit']) + '.npz'
+        args['data_file'] = 'datasets/binary_mnist_'+ str(args['digit']) + '.npz'
         return _get_data_from_file(args)
     else:
         return None
@@ -69,15 +70,15 @@ def get_data_structure():
         parameters['adjacency_matrix'] = adj
         
     elif config.data_name == 'mnist':
-        graph_size = 28 * 28
+        graph_size = 14 * 14
         adj = np.zeros([graph_size, graph_size])
-        for r in range(0, 28):
-            for c in range(0, 28):
-                jj = r*28 + c
+        for r in range(0, 14):
+            for c in range(0, 14):
+                jj = r*14 + c
                 if c > 0:
                     adj[jj-1][jj] = adj[jj][jj-1] = 1
                 if r > 0:
-                    adj[jj-28][jj] = adj[jj][jj-28] = 1
+                    adj[jj-14][jj] = adj[jj][jj-14] = 1
         parameters['adjacency_matrix'] = adj
         
     elif config.data_name == 'Boltzmann':

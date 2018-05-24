@@ -45,7 +45,6 @@ class MADE:
             mu = [(i+1)/(config.num_of_hlayer+1) for i in range(config.num_of_hlayer)]
             
             for i_m in range(0,config.num_of_all_masks):
-        
                 
                 ###  We can add different orderings here
                 Q = _make_Q(self.adjacency_matrix)
@@ -62,7 +61,6 @@ class MADE:
                     corresp_Q_inds = np.random.randint(0,config.graph_size,config.hlayer_size)
                     rnd_prm = np.random.permutation(config.hlayer_size)
                     corresp_Q_inds[ rnd_prm[:config.graph_size] ] = np.arange(0,config.graph_size)
-                    
                     for j in range(config.hlayer_size):
                         
                         corresp_Q = Q[corresp_Q_inds[j]]
@@ -79,7 +77,6 @@ class MADE:
                                                 
                         labels[i][j] = np.union1d(labels[i][j], corresp_Q[rnd < mu[i-1]])
                         
-                
                 #cnt_masks = 0
                 masks = []
                 for i in range(1,len(labels)):

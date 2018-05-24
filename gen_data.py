@@ -1,6 +1,6 @@
 import numpy as np
 from keras.datasets import mnist
-#from PIL import Image
+from PIL import Image
 
 
 def _gen_Ising_data(args):
@@ -34,10 +34,10 @@ def _gen_mnist_data(args):
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     trd = np.rint(x_train[y_train == special_digit]/255.0)
     np.random.shuffle(trd)
-    train_data = np.reshape(trd, (trd.shape[0], 784))
+    train_data = np.reshape(trd[:,7:21,7:21], (trd.shape[0], 14*14))
     ted = np.rint(x_test[y_test == special_digit]/255.0)
     np.random.shuffle(ted)
-    test_data = np.reshape(ted, (ted.shape[0], 784))
+    test_data = np.reshape(ted[:,7:21,7:21], (ted.shape[0], 14*14))
     return {'train_data' : train_data,
             'test_data' : test_data}
     #img = Image.fromarray(trd[154]*255)

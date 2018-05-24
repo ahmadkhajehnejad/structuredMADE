@@ -30,9 +30,9 @@ def execute_one_round():
         args['m'] = config.m_boltzmann
     elif args['data_name'] == 'mnist':
         args['digit'] = config.digit
-        
+    
     data = get_data(args)
-        
+    
     model.fit(data['train_data'], data['valid_data'])
         
     pred = model.predict(data['test_data'])
