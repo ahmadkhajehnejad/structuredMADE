@@ -1,28 +1,32 @@
 #!/bin/bash
-ALG='Q_restricted'
 FILE_NAME_PREFIX='results_mnist_6'
 
 
+echo ' '
 for HL in 'numhl2_hlsize300' 'numhl2_hlsize600'
 do
 	for prefix in 'Average NLLs: ' 'avg Num of Connections '
 	do
-		results="$HL $prefix ["
-		for i in 1 2 3 4
+		for ALG in 'orig' 'min_related' 'Q_restricted'
 		do
-			DEST_PATH="./$ALG/$HL/$i"
-			TR=$((200*$i))
-			VAL=$((50*$i))
-			TE=5000
-			catched_line=$(cat $DEST_PATH/$FILE_NAME_PREFIX"_tr"$TR"_val"$VAL"_te"$TE".txt" | grep "$prefix")
-			new_result=${catched_line#$prefix}
-			if [ $((i)) -lt 4 ]; then
-				results="$results $new_result,"
-			else
-				results="$results $new_result]"
-			fi
+			results="$ALG - $HL - $prefix ["
+			for i in 1 2 3 4
+			do
+				DEST_PATH="./$ALG/$HL/$i"
+				TR=$((200*$i))
+				VAL=$((50*$i))
+				TE=5000
+				catched_line=$(cat $DEST_PATH/$FILE_NAME_PREFIX"_tr"$TR"_val"$VAL"_te"$TE".txt" | grep "$prefix")
+				new_result=${catched_line#$prefix}
+				if [ $((i)) -lt 4 ]; then
+					results="$results $new_result,"
+				else
+					results="$results $new_result]"
+				fi
+			done
+			echo $results
 		done
-		echo $results
+		echo ' '
 	done
 done
 #echo "============="
