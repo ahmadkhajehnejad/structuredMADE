@@ -40,6 +40,7 @@ def execute_one_round():
     res = dict()    
     res['NLL'], res['KL'] = evaluate(pred, data['test_data_probs'])
     print('KL: ' + str(res['KL']), file=sys.stderr)
+    print('NLL: ' + str(res['NLL']), file=sys.stderr)
     sys.stderr.flush()
     res['train_end_epochs'] = model.train_end_epochs
     res['num_of_connections'] = model.num_of_connections()
