@@ -28,6 +28,9 @@ def execute_one_round():
     elif args['data_name'] == 'Boltzmann':
         args['n'] = config.n_boltzmann
         args['m'] = config.m_boltzmann
+    elif args['data_name'] == 'k_sparse':
+        args['n'] = config.n_of_k_sparse
+        args['sparsity_degree'] = config.sparsity_degree
     elif args['data_name'] == 'mnist':
         args['digit'] = config.digit
     

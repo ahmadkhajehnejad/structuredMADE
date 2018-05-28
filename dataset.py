@@ -51,6 +51,9 @@ def get_data(args):
     elif args['data_name'] == 'mnist':
         args['data_file'] = 'datasets/binary_mnist_'+ str(args['digit']) + '.npz'
         return _get_data_from_file(args)
+    elif args['data_name'] == 'k_sparse':
+        args['data_file'] = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
+        return _get_data_from_file(args)
     else:
         return None
 
@@ -90,4 +93,9 @@ def get_data_structure():
             for j in range(m):
                 adj[i,n+j] = adj[n+j,i] = 1
         parameters['adjacency_matrix'] = adj
+        
+    elif config.data_name == 'k_sparse':
+        with np.load('dataset_structures/k_sparse_' + str(config.n_of_k_sparse) + '_' + config.sparsity_degree + '.npz') as params:
+            parameters['adjacency_matrix'] = params['adjacency_matrix']
+            
     return parameters

@@ -7,7 +7,7 @@ AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
 num_of_exec = 10
 num_of_all_masks = 10
 num_of_hlayer = 2
-hlayer_size = 300#600
+hlayer_size = 50
 fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
 batch_size = 50
@@ -18,9 +18,9 @@ train_size = 200
 validation_size = 50
 test_size = 5000
 
-algorithm = 'Q_restricted'#'orig'#'Q_restricted'#'min_related'#
+algorithm = 'orig'#'Q_restricted'#'min_related'#
 
-data_name = 'mnist'#'Boltzmann'#'grid'
+data_name = 'k_sparse'#'min_related'#'grid'#'mnist'#'Boltzmann'
 
 ## grid configs
 width = 4
@@ -35,6 +35,10 @@ digit = 6
 n_boltzmann = 10
 m_boltzmann = 10
 
+# k_sparse
+n_of_k_sparse = 20
+sparsity_degree = 3
+
 ##############
 
 if data_name == 'grid':
@@ -43,3 +47,5 @@ elif data_name == 'mnist':
     graph_size = 14*14
 elif data_name == 'Boltzmann':
     graph_size = n_boltzmann + m_boltzmann
+elif data_name == 'k_sparse':
+    graph_size = n_of_k_sparse

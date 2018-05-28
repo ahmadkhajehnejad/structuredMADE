@@ -79,7 +79,23 @@ def gen_params(args):
                  cum_probs = cum_probs,
                  graph_size = len(w_v)
                  )
+    elif args['data_name'] == 'k_sparse':
+        with np.load('dataset_structures/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '_structure.npz') as parameters:
+            adjacency_matrix = parameters['adjacency_matrix']
+        n = args['n']
+        w_v = np.random.sample(n)
+        w_e = np.random.sample(n**2).reshape([n,n]) * adjacency_matrix
         
-        
+        all_outcomes, prob_of_outcomes, cum_probs = _get_Ising_data_params(w_v, w_e)
+        np.savez('dataset_parameters/k_sparse_' + str(n) + '_' + str(args['sparsity_degree']) + '_parameters.npz',
+                 edge_parameters = w_e,
+                 vertex_parameters = w_v,
+                 all_outcomes = all_outcomes,
+                 prob_of_outcomes = prob_of_outcomes,
+                 cum_probs = cum_probs,
+                 graph_size = len(w_v)
+                 )
+    
 #gen_params({'data_name' : 'grid', 'height' : 4, 'width' : 4})
 #gen_params({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10})
+gen_params({'data_name' : 'k_sparse', 'sparsity_degree' : 3, 'n' : 20})

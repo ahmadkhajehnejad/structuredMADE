@@ -51,6 +51,10 @@ def gen_data(args):
         args['parameters_file'] = 'dataset_parameters/Boltzman_' + str(args['n']) + '&' + str(args['m']) + '_parameters.npz'
         dt = _gen_Ising_data(args)
         dest_file = 'datasets/Boltzman_' + str(args['n']) + '&' + str(args['m']) + '.npz'
+    elif args['data_name'] == 'k_sparse':
+        args['parameters_file'] = 'dataset_parameters/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '_parameters.npz'
+        dt = _gen_Ising_data(args)
+        dest_file = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
     elif args['data_name'] == 'mnist':
         dt = _gen_mnist_data(args)
         dt['all_outcomes'] = None
@@ -58,6 +62,7 @@ def gen_data(args):
         dt['train_data_probs'] = None
         dt['test_data_probs'] = None
         dest_file = 'datasets/binary_mnist_' + str(args['digit']) + '.npz'
+        
         
     np.savez(dest_file,
              train_data = dt['train_data'],
@@ -71,3 +76,4 @@ def gen_data(args):
 #gen_data({'data_name' : 'grid', 'height' : 4, 'width' : 4, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'mnist', 'digit' : 6})
+gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
