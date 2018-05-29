@@ -15,7 +15,7 @@ def _get_data_from_file(args):
         valid_data = data[args['train_size']:(args['train_size']+args['valid_size'])]
         
         
-        if not(data_probs is None):
+        if not(data_probs == None):
             train_data_probs = data_probs[0:args['train_size']]
             valid_data_probs = data_probs[args['train_size']:(args['train_size']+args['valid_size'])]
         else:
@@ -29,7 +29,7 @@ def _get_data_from_file(args):
             data = parameters['test_data']
             data_probs = parameters['test_data_probs']
             test_data = data[0:args['test_size']]
-            if not(data_probs is None):
+            if not(data_probs == None):
                 test_data_probs = data_probs[0:args['test_size']]
             else:
                 test_data_probs = None
