@@ -6,6 +6,19 @@ import config
 from made import MADE
 import sys    
 
+import tensorflow as tf
+from keras import backend as K
+
+
+with K.tf.device('gpu:1'):
+    tf_config = tf.ConfigProto(intra_op_parallelism_threads=4,\
+           inter_op_parallelism_threads=4, allow_soft_placement=True,\
+           device_count = {'CPU' : 1, 'GPU' : 1})
+    tf_config.gpu_options.allow_growth=True
+    sess = tf.Session(config=tf_config)
+    K.set_session(sess)
+
+
 def evaluate(pred_log_probs, true_probs=None):
     NLL = -1*np.mean(pred_log_probs)
     if true_probs is not None:
