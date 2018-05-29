@@ -54,6 +54,9 @@ def get_data(args):
     elif args['data_name'] == 'k_sparse':
         args['data_file'] = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
         return _get_data_from_file(args)
+    elif args['data_name'] == 'rcv1':
+        args['data_file'] = 'datasets/rcv1.npz'
+        return _get_data_from_file(args)
     else:
         return None
 
@@ -96,6 +99,9 @@ def get_data_structure():
         
     elif config.data_name == 'k_sparse':
         with np.load('dataset_structures/k_sparse_' + str(config.n_of_k_sparse) + '_' + config.sparsity_degree + '.npz') as params:
+            parameters['adjacency_matrix'] = params['adjacency_matrix']
+    elif config.data_name == 'rcv1':
+        with np.load('dataset_structures/rcv1_structure.npz') as params:
             parameters['adjacency_matrix'] = params['adjacency_matrix']
             
     return parameters

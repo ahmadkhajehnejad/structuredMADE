@@ -62,6 +62,19 @@ def gen_data(args):
         dt['train_data_probs'] = None
         dt['test_data_probs'] = None
         dest_file = 'datasets/binary_mnist_' + str(args['digit']) + '.npz'
+    elif args['data_name'] == 'rcv1':
+        rcv1 = np.load('datasets/rcv1_orig.npz')
+        tr = np.concatenate( [rcv1['train_data'], rcv1['valid_data']] ).copy()
+        te = rcv1['test_data'].copy()
+        np.random.shuffle(tr)
+        np.random.shuffle(te)
+        dt = {'train_data': tr, 'test_data': te}
+        dt['all_outcomes'] = None
+        dt['prob_of_outcomes'] = None
+        dt['train_data_probs'] = None
+        dt['test_data_probs'] = None
+        dest_file = 'datasets/rcv1.npz'
+    
         
         
     np.savez(dest_file,
@@ -76,4 +89,5 @@ def gen_data(args):
 #gen_data({'data_name' : 'grid', 'height' : 4, 'width' : 4, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'mnist', 'digit' : 6})
-gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
+#gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
+gen_data({'data_name' : 'rcv1'})

@@ -29,8 +29,6 @@ def evaluate(pred_log_probs, true_probs=None):
 
 def execute_one_round():
     
-    model = MADE()
-
     args = {'data_name' : config.data_name, 'train_size' : config.train_size, 'valid_size' : config.validation_size, 'test_size' : config.test_size}
     if args['data_name'] == 'grid':
         args['width'] = config.width
@@ -45,6 +43,8 @@ def execute_one_round():
         args['digit'] = config.digit
     
     data = get_data(args)
+
+    model = MADE()
     
     model.fit(data['train_data'], data['valid_data'])
         
