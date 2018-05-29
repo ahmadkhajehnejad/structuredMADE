@@ -98,7 +98,7 @@ def get_data_structure():
         parameters['adjacency_matrix'] = adj
         
     elif config.data_name == 'k_sparse':
-        with np.load('dataset_structures/k_sparse_' + str(config.n_of_k_sparse) + '_' + config.sparsity_degree + '.npz') as params:
+        with np.load('dataset_structures/k_sparse_' + str(config.n_of_k_sparse) + '_' + str(config.sparsity_degree) + '_structure.npz') as params:
             parameters['adjacency_matrix'] = params['adjacency_matrix']
     elif config.data_name == 'rcv1':
         with np.load('dataset_structures/rcv1_structure.npz') as params:
