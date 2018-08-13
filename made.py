@@ -47,6 +47,7 @@ class MADE:
             
             for i_m in range(0,config.num_of_all_masks):
                 
+                
                 ###  We can add different orderings here
                 Q = _make_Q(self.adjacency_matrix)
                 
@@ -62,13 +63,31 @@ class MADE:
                     corresp_Q_inds = np.random.randint(0,config.graph_size,config.hlayer_size)
                     rnd_prm = np.random.permutation(config.hlayer_size)
                     corresp_Q_inds[ rnd_prm[:config.graph_size] ] = np.arange(0,config.graph_size)
+                    
+                    
+                    tmp0 = np.zeros([len(labels[i-1]), config.graph_size])                    
+                    for k in range(len(labels[i-1])):
+                        tmp0[k,labels[i-1][k]] = 1
+                    
+                    
                     for j in range(config.hlayer_size):
                         
                         corresp_Q = Q[corresp_Q_inds[j]]
                         while corresp_Q.size == 0:
                             corresp_Q = Q[np.random.randint(0,config.graph_size)]
 
-                        tmp = [k for k in range(len(labels[i-1])) if np.intersect1d(labels[i-1][k], corresp_Q).size == np.unique(labels[i-1][k]).size]
+                        tmp_Q = np.zeros([config.graph_size,1])
+                        tmp_Q[corresp_Q,0] = 1
+                        
+                        tmp = np.where(np.matmul(tmp0, 1-tmp_Q) == 0)[0]
+
+                        '''
+                        tmp_ = [k for k in range(len(labels[i-1])) if np.intersect1d(labels[i-1][k], corresp_Q).size == np.unique(labels[i-1][k]).size]
+                        if not(np.all(tmp == tmp_)):
+                            while (True):
+                                print('tmp != tmp' )
+                        '''
+                        
                         pr = np.random.choice(tmp)
                         
                         
@@ -78,11 +97,12 @@ class MADE:
                                                 
                         labels[i][j] = np.union1d(labels[i][j], corresp_Q[rnd < mu[i-1]])
                         
+                
                 #cnt_masks = 0
                 masks = []
                 for i in range(1,len(labels)):
                     
-                    print('layer # ', i)
+                    #print('layer # ', i)
                     
                     tmp1 = np.zeros([len(labels[i-1]), config.graph_size])
                     tmp2 = np.zeros([len(labels[i]), config.graph_size])
@@ -109,6 +129,7 @@ class MADE:
                     masks.append(mask)
                 #print('-- ' + str(cnt_masks))
                 all_masks.append(masks)
+                
         else:
             all_masks = []
             for i_m in range(0,config.num_of_all_masks):
