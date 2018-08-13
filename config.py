@@ -18,7 +18,7 @@ train_size = 200
 validation_size = 50
 test_size = 5000
 
-algorithm = 'Q_restricted'#'orig'#'min_related'#
+algorithm = 'Q_restricted'#'orig'#'min_related'#'ensemble_Q_restricted_and_orig'#
 
 data_name = 'rcv1'#'mnist'#'k_sparse'#'min_related'#'grid'#'mnist'#'Boltzmann'
 
