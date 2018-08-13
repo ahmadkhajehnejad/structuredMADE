@@ -4,6 +4,7 @@ from keras.layers import Input
 import config
 from made_utils import MaskedDenseLayer, MyEarlyStopping, log_sum_exp
 from dataset import get_data_structure
+from keras import optimizers
 
 
 def _spread(current_node, root_node, visited, adj):
@@ -80,14 +81,32 @@ class MADE:
                 #cnt_masks = 0
                 masks = []
                 for i in range(1,len(labels)):
-                    mask = np.zeros([len(labels[i-1]), len(labels[i])], dtype=np.float32)
+                    
+                    print('layer # ', i)
+                    
+                    tmp1 = np.zeros([len(labels[i-1]), config.graph_size])
+                    tmp2 = np.zeros([len(labels[i]), config.graph_size])
+                    
+                    for k in range(len(labels[i-1])):
+                        tmp1[k,labels[i-1][k]] = 1
+                    for k in range(len(labels[i])):
+                        tmp2[k,labels[i][k]] = 1
+                    
+                    tmp3 = np.matmul(tmp1, (1-tmp2).T)
+                    
+                    mask = np.array((tmp3 == 0), dtype=np.float32)
+                    
+                    '''
+                    mask_2 = np.zeros([len(labels[i-1]), len(labels[i])], dtype=np.float32)
                     for k in range(len(labels[i-1])):
                         for j in range(len(labels[i])):
-                            mask[k][j] = (np.intersect1d(labels[i-1][k], labels[i][j]).size == np.unique(labels[i-1][k]).size)
+                            mask_2[k][j] = (np.intersect1d(labels[i-1][k], labels[i][j]).size == np.unique(labels[i-1][k]).size)
                             #if mask[k][j]:
                             #    cnt_masks += 1
+                    print('mask == maks_2 :  ', np.all(mask == mask_2))
+                    '''
+                    
                     masks.append(mask)
-        
                 #print('-- ' + str(cnt_masks))
                 all_masks.append(masks)
         else:
