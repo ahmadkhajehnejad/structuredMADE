@@ -28,10 +28,11 @@ def _make_Q(adj):
     return Q    
 
 
+
 class MADE:
     def __init__(self):
         self.masking_method = config.algorithm
-        if self.masking_method == 'Q_restricted':
+        if self.masking_method in ['Q_restricted', 'ensemble_Q_restricted_and_orig']:
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
         self.all_masks = self.generate_all_masks()
@@ -40,160 +41,18 @@ class MADE:
         self.train_end_epochs = []
 
     def generate_all_masks(self):
+        all_masks = []
         if self.masking_method == 'Q_restricted':
-            all_masks = []
-            ### We can change it
-            mu = [(i+1)/(config.num_of_hlayer+1) for i in range(config.num_of_hlayer)]
-            
-            for i_m in range(0,config.num_of_all_masks):
-                
-                
-                ###  We can add different orderings here
-                Q = _make_Q(self.adjacency_matrix)
-                
-                
-                
-                labels = []
-                for i in range(config.num_of_hlayer):
-                    labels.append([None] * config.hlayer_size)
-                labels.insert(0,[np.array([i]) for i in range(config.graph_size)])
-                labels.append( [Q[i] for i in range(config.graph_size)])
-
-                for i in range(1,config.num_of_hlayer+1):
-                    corresp_Q_inds = np.random.randint(0,config.graph_size,config.hlayer_size)
-                    rnd_prm = np.random.permutation(config.hlayer_size)
-                    corresp_Q_inds[ rnd_prm[:config.graph_size] ] = np.arange(0,config.graph_size)
-                    
-                    
-                    tmp0 = np.zeros([len(labels[i-1]), config.graph_size])                    
-                    for k in range(len(labels[i-1])):
-                        tmp0[k,labels[i-1][k]] = 1
-                    
-                    
-                    for j in range(config.hlayer_size):
-                        
-                        corresp_Q = Q[corresp_Q_inds[j]]
-                        while corresp_Q.size == 0:
-                            corresp_Q = Q[np.random.randint(0,config.graph_size)]
-
-                        tmp_Q = np.zeros([config.graph_size,1])
-                        tmp_Q[corresp_Q,0] = 1
-                        
-                        tmp = np.where(np.matmul(tmp0, 1-tmp_Q) == 0)[0]
-
-                        '''
-                        tmp_ = [k for k in range(len(labels[i-1])) if np.intersect1d(labels[i-1][k], corresp_Q).size == np.unique(labels[i-1][k]).size]
-                        if not(np.all(tmp == tmp_)):
-                            while (True):
-                                print('tmp != tmp' )
-                        '''
-                        
-                        pr = np.random.choice(tmp)
-                        
-                        
-                        labels[i][j] = (labels[i-1][pr]).copy()
-                                                
-                        rnd = np.random.uniform(0.,1.,corresp_Q.size)
-                                                
-                        labels[i][j] = np.union1d(labels[i][j], corresp_Q[rnd < mu[i-1]])
-                        
-                
-                #cnt_masks = 0
-                masks = []
-                for i in range(1,len(labels)):
-                    
-                    #print('layer # ', i)
-                    
-                    tmp1 = np.zeros([len(labels[i-1]), config.graph_size])
-                    tmp2 = np.zeros([len(labels[i]), config.graph_size])
-                    
-                    for k in range(len(labels[i-1])):
-                        tmp1[k,labels[i-1][k]] = 1
-                    for k in range(len(labels[i])):
-                        tmp2[k,labels[i][k]] = 1
-                    
-                    tmp3 = np.matmul(tmp1, (1-tmp2).T)
-                    
-                    mask = np.array((tmp3 == 0), dtype=np.float32)
-                    
-                    '''
-                    mask_2 = np.zeros([len(labels[i-1]), len(labels[i])], dtype=np.float32)
-                    for k in range(len(labels[i-1])):
-                        for j in range(len(labels[i])):
-                            mask_2[k][j] = (np.intersect1d(labels[i-1][k], labels[i][j]).size == np.unique(labels[i-1][k]).size)
-                            #if mask[k][j]:
-                            #    cnt_masks += 1
-                    print('mask == maks_2 :  ', np.all(mask == mask_2))
-                    '''
-                    
-                    masks.append(mask)
-                #print('-- ' + str(cnt_masks))
-                all_masks.append(masks)
-                
+            for i_m in range(0,config.num_of_all_masks):                
+                all_masks.append(self._Q_restricted_mask())
+        elif self.masking_method == 'ensemble_Q_restricted_and_orig':
+            for i_m in range(0, config.num_of_all_masks // 2):                
+                all_masks.append(self._Q_restricted_mask())
+            for i_m in range(config.num_of_all_masks // 2, config.num_of_all_masks):
+                all_masks.append(self._normal_mask('orig'))
         else:
-            all_masks = []
             for i_m in range(0,config.num_of_all_masks):
-                #generating subsets as 3d matrix 
-                #subsets = np.random.randint(0, 2, (num_of_hlayer, hlayer_size, graph_size))
-                labels = np.zeros([config.num_of_hlayer, config.hlayer_size], dtype=np.float32)
-                min_label = 0
-                for ii in range(config.num_of_hlayer):
-                    labels[ii][:] = np.random.randint(min_label, config.graph_size, (config.hlayer_size))
-                    min_label = np.amin(labels[ii])
-                #generating masks as 3d matrix
-                #masks = np.zeros([num_of_hlayer,hlayer_size,hlayer_size])
-                
-                masks = []
-        #        if (algo == 'orig'):
-        #            pi = np.random.permutation(graph_size)
-        #            #pi = np.array(range(graph_size))
-        #        else:
-        #            pi = np.array(range(graph_size))
-                #first layer mask
-                mask = np.zeros([config.graph_size, config.hlayer_size], dtype=np.float32)
-                for j in range(0, config.hlayer_size):
-                    for k in range(0, config.graph_size):
-                        if (self.masking_method == 'orig'):
-                            if (labels[0][j] >= k): #and (pi[k] >= labels[0][j]-width)):
-                                mask[k][j] = 1.0
-                        elif self.masking_method == 'min_related':
-                            if ((labels[0][j] >= k) and (k - config.related_size <= labels[0][j])): #cant use permutation in our approach
-                                mask[k][j] = 1.0
-                        else:
-                            print("wrong masking method " + self.masking_method)
-                masks.append(mask)
-                
-                #hidden layers mask   
-                for i in range(1, config.num_of_hlayer):
-                    mask = np.zeros([config.hlayer_size, config.hlayer_size], dtype=np.float32)
-                    for j in range(0, config.hlayer_size):
-                        for k in range(0, config.hlayer_size):
-                            if (self.masking_method == 'orig'):
-                                if (labels[i][j] >= labels[i-1][k]): #and (labels[i][j] >= labels[i-1][k]-width)):
-                                    mask[k][j] = 1.0
-                            elif self.masking_method == 'min_related':
-                                if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - config.related_size <= labels[i-1][k] )):
-                                    mask[k][j] = 1.0
-                            else:
-                                print("wrong masking method " + self.masking_methdo)
-
-                    masks.append(mask)
-                
-                #last layer mask
-                mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
-                #last_layer_label = np.random.randint(0, 4, graph_size)
-                for j in range(0, config.graph_size):
-                    for k in range(0, config.hlayer_size):
-                        if (self.masking_method == 'orig'):
-                            if (j > labels[-1][k]): #and (j >= labels[-1][k]-width)):
-                                mask[k][j] = 1.0
-                        elif (self.masking_method == 'min_related'):
-                            if ((j > labels[-1][k]) and (j - config.related_size <= labels[-1][k])):
-                                mask[k][j] = 1.0
-                        else:
-                            print("wrong masking method " + self.masking_method)
-                masks.append(mask)
-                all_masks.append(masks)
+                all_masks.append(self._normal_mask(self.masking_method))
         
         
         swapped_all_masks = []
@@ -205,6 +64,157 @@ class MADE:
             
         #all_masks = [[x*1.0 for x in y] for y in all_masks]
         return swapped_all_masks
+
+    def _Q_restricted_mask(self):
+        ### We can change it
+        mu = [(i+1)/(config.num_of_hlayer+1) for i in range(config.num_of_hlayer)]
+    
+        
+        ###  We can add different orderings here
+        Q = _make_Q(self.adjacency_matrix)
+        
+        
+        
+        labels = []
+        for i in range(config.num_of_hlayer):
+            labels.append([None] * config.hlayer_size)
+        labels.insert(0,[np.array([i]) for i in range(config.graph_size)])
+        labels.append( [Q[i] for i in range(config.graph_size)])
+    
+        for i in range(1,config.num_of_hlayer+1):
+            corresp_Q_inds = np.random.randint(0,config.graph_size,config.hlayer_size)
+            rnd_prm = np.random.permutation(config.hlayer_size)
+            corresp_Q_inds[ rnd_prm[:config.graph_size] ] = np.arange(0,config.graph_size)
+            
+            
+            tmp0 = np.zeros([len(labels[i-1]), config.graph_size])                    
+            for k in range(len(labels[i-1])):
+                tmp0[k,labels[i-1][k]] = 1
+            
+            
+            for j in range(config.hlayer_size):
+                
+                corresp_Q = Q[corresp_Q_inds[j]]
+                while corresp_Q.size == 0:
+                    corresp_Q = Q[np.random.randint(0,config.graph_size)]
+    
+                tmp_Q = np.zeros([config.graph_size,1])
+                tmp_Q[corresp_Q,0] = 1
+                
+                tmp = np.where(np.matmul(tmp0, 1-tmp_Q) == 0)[0]
+    
+                '''
+                tmp_ = [k for k in range(len(labels[i-1])) if np.intersect1d(labels[i-1][k], corresp_Q).size == np.unique(labels[i-1][k]).size]
+                if not(np.all(tmp == tmp_)):
+                    while (True):
+                        print('tmp != tmp' )
+                '''
+                
+                pr = np.random.choice(tmp)
+                
+                
+                labels[i][j] = (labels[i-1][pr]).copy()
+                                        
+                rnd = np.random.uniform(0.,1.,corresp_Q.size)
+                                        
+                labels[i][j] = np.union1d(labels[i][j], corresp_Q[rnd < mu[i-1]])
+                
+        
+        #cnt_masks = 0
+        masks = []
+        for i in range(1,len(labels)):
+            
+            #print('layer # ', i)
+            
+            tmp1 = np.zeros([len(labels[i-1]), config.graph_size])
+            tmp2 = np.zeros([len(labels[i]), config.graph_size])
+            
+            for k in range(len(labels[i-1])):
+                tmp1[k,labels[i-1][k]] = 1
+            for k in range(len(labels[i])):
+                tmp2[k,labels[i][k]] = 1
+            
+            tmp3 = np.matmul(tmp1, (1-tmp2).T)
+            
+            mask = np.array((tmp3 == 0), dtype=np.float32)
+            
+            '''
+            mask_2 = np.zeros([len(labels[i-1]), len(labels[i])], dtype=np.float32)
+            for k in range(len(labels[i-1])):
+                for j in range(len(labels[i])):
+                    mask_2[k][j] = (np.intersect1d(labels[i-1][k], labels[i][j]).size == np.unique(labels[i-1][k]).size)
+                    #if mask[k][j]:
+                    #    cnt_masks += 1
+            print('mask == maks_2 :  ', np.all(mask == mask_2))
+            '''
+            
+            masks.append(mask)
+        #print('-- ' + str(cnt_masks))
+        return masks
+
+    def _normal_mask(self, masking_method):
+        #generating subsets as 3d matrix 
+        #subsets = np.random.randint(0, 2, (num_of_hlayer, hlayer_size, graph_size))
+        labels = np.zeros([config.num_of_hlayer, config.hlayer_size], dtype=np.float32)
+        min_label = 0
+        for ii in range(config.num_of_hlayer):
+            labels[ii][:] = np.random.randint(min_label, config.graph_size, (config.hlayer_size))
+            min_label = np.amin(labels[ii])
+        #generating masks as 3d matrix
+        #masks = np.zeros([num_of_hlayer,hlayer_size,hlayer_size])
+        
+        masks = []
+    #        if (algo == 'orig'):
+    #            pi = np.random.permutation(graph_size)
+    #            #pi = np.array(range(graph_size))
+    #        else:
+    #            pi = np.array(range(graph_size))
+        #first layer mask
+        mask = np.zeros([config.graph_size, config.hlayer_size], dtype=np.float32)
+        for j in range(0, config.hlayer_size):
+            for k in range(0, config.graph_size):
+                if (masking_method == 'orig'):
+                    if (labels[0][j] >= k): #and (pi[k] >= labels[0][j]-width)):
+                        mask[k][j] = 1.0
+                elif masking_method == 'min_related':
+                    if ((labels[0][j] >= k) and (k - config.related_size <= labels[0][j])): #cant use permutation in our approach
+                        mask[k][j] = 1.0
+                else:
+                    print("wrong masking method " + masking_method)
+        masks.append(mask)
+        
+        #hidden layers mask   
+        for i in range(1, config.num_of_hlayer):
+            mask = np.zeros([config.hlayer_size, config.hlayer_size], dtype=np.float32)
+            for j in range(0, config.hlayer_size):
+                for k in range(0, config.hlayer_size):
+                    if (masking_method == 'orig'):
+                        if (labels[i][j] >= labels[i-1][k]): #and (labels[i][j] >= labels[i-1][k]-width)):
+                            mask[k][j] = 1.0
+                    elif masking_method == 'min_related':
+                        if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - config.related_size <= labels[i-1][k] )):
+                            mask[k][j] = 1.0
+                    else:
+                        print("wrong masking method " + masking_methdo)
+    
+            masks.append(mask)
+        
+        #last layer mask
+        mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
+        #last_layer_label = np.random.randint(0, 4, graph_size)
+        for j in range(0, config.graph_size):
+            for k in range(0, config.hlayer_size):
+                if (masking_method == 'orig'):
+                    if (j > labels[-1][k]): #and (j >= labels[-1][k]-width)):
+                        mask[k][j] = 1.0
+                elif (masking_method == 'min_related'):
+                    if ((j > labels[-1][k]) and (j - config.related_size <= labels[-1][k])):
+                        mask[k][j] = 1.0
+                else:
+                    print("wrong masking method " + masking_method)
+        masks.append(mask)
+        return masks
+
 
     def num_of_connections(self):
         cnt = 0
