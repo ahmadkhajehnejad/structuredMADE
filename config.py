@@ -12,7 +12,7 @@ fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
 batch_size = 50
 optimizer = AE_adam
-patience = 20
+patience = 2 * num_of_all_masks
 
 train_size = 200
 validation_size = 50
