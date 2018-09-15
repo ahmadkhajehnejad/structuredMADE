@@ -164,20 +164,20 @@ class MADE:
         #masks = np.zeros([num_of_hlayer,hlayer_size,hlayer_size])
         
         masks = []
-    #        if (algo == 'orig'):
-    #            pi = np.random.permutation(graph_size)
-    #            #pi = np.array(range(graph_size))
-    #        else:
-    #            pi = np.array(range(graph_size))
+        if masking_method == 'orig':
+            pi = np.arange(config.graph_size)
+            if config.random_dimensions_order:
+                pi = np.random.permutation(config.graph_size)
+
         #first layer mask
         mask = np.zeros([config.graph_size, config.hlayer_size], dtype=np.float32)
         for j in range(0, config.hlayer_size):
             for k in range(0, config.graph_size):
                 if (masking_method == 'orig'):
-                    if (labels[0][j] >= k): #and (pi[k] >= labels[0][j]-width)):
+                    if (labels[0][j] >= pi[k]):
                         mask[k][j] = 1.0
                 elif masking_method == 'min_related':
-                    if ((labels[0][j] >= k) and (k - config.related_size <= labels[0][j])): #cant use permutation in our approach
+                    if ((labels[0][j] >= k) and (labels[0][j] - config.related_size <= k)): #cant use permutation in our approach
                         mask[k][j] = 1.0
                 else:
                     print("wrong masking method " + masking_method)
@@ -205,7 +205,7 @@ class MADE:
         for j in range(0, config.graph_size):
             for k in range(0, config.hlayer_size):
                 if (masking_method == 'orig'):
-                    if (j > labels[-1][k]): #and (j >= labels[-1][k]-width)):
+                    if (pi[j] > labels[-1][k]): #and (j >= labels[-1][k]-width)):
                         mask[k][j] = 1.0
                 elif (masking_method == 'min_related'):
                     if ((j > labels[-1][k]) and (j - config.related_size <= labels[-1][k])):
