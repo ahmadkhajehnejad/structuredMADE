@@ -17,7 +17,7 @@ random_dimensions_order = True  #norice that random permutation is just implemen
 
 train_size = 200
 validation_size = 50
-test_size = 'FULL_TEST'
+test_size = 5000
 
 algorithm = 'orig'#'Q_restricted'#'min_related'#'ensemble_Q_restricted_and_orig'#
 
