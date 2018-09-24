@@ -28,6 +28,20 @@ def _make_Q(adj):
     return Q    
 
 
+def _detect_subsets(labels_1, labels_2):
+    tmp1 = np.zeros([len(labels_1), config.graph_size])
+    tmp2 = np.zeros([len(labels_2), config.graph_size])
+    
+    for k in range(len(labels_1)):
+        tmp1[k,labels_1[k]] = 1
+    for k in range(len(labels_2)):
+        tmp2[k,labels_2[k]] = 1
+    
+    tmp3 = np.matmul(tmp1, (1-tmp2).T)
+    
+    return np.array((tmp3 == 0), dtype=np.float32)
+    
+    
 
 class MADE:
     def __init__(self):
@@ -126,17 +140,7 @@ class MADE:
             
             #print('layer # ', i)
             
-            tmp1 = np.zeros([len(labels[i-1]), config.graph_size])
-            tmp2 = np.zeros([len(labels[i]), config.graph_size])
-            
-            for k in range(len(labels[i-1])):
-                tmp1[k,labels[i-1][k]] = 1
-            for k in range(len(labels[i])):
-                tmp2[k,labels[i][k]] = 1
-            
-            tmp3 = np.matmul(tmp1, (1-tmp2).T)
-            
-            mask = np.array((tmp3 == 0), dtype=np.float32)
+            mask = _detect_subsets(labels[i-1], labels[i])
             
             '''
             mask_2 = np.zeros([len(labels[i-1]), len(labels[i])], dtype=np.float32)
@@ -147,14 +151,36 @@ class MADE:
                     #    cnt_masks += 1
             print('mask == maks_2 :  ', np.all(mask == mask_2))
             '''
-            if (config.direct_links) and (i == len(labels)-1):
-                tmp_mask = np.zeros(config.graph_size, config.graph_size)
-                for j in range(len(config.graph_size)):
-                    tmp_mask[Q[j], j] = 1.0
-                
-                mask = np.concatenate([mask, tmp_mask], axis=0)
             
             masks.append(mask)
+            
+            
+        ## Backward Pass
+        if config.Q_restricted_2_pass:
+            for i in reversed(range(1,len(labels)-1)):
+                is_subset = _detect_subsets(labels[i-1], labels[i+1])
+                
+                
+                zero_out_edge_nodes = np.where(np.sum(masks[i], axis=1) == 0)[0]
+                for j in zero_out_edge_nodes:
+                    t = np.random.randint(0,len(labels[i+1]))
+                    k = np.random.choice( np.where(is_subset[:,t].reshape([-1]) > 0)[0] )
+
+                    labels[i][j] = (labels[i-1][k]).copy()
+                    rnd = np.random.uniform(0.,1.,labels[i+1][t].size)
+                    labels[i][j] = np.union1d(labels[i][j], labels[i+1][t][rnd < mu[i-1]])
+                    
+                masks[i] = _detect_subsets(labels[i], labels[i+1])
+                masks[i-1] = _detect_subsets(labels[i-1], labels[i])
+        
+        
+        if config.direct_links:
+            tmp_mask = np.zeros([config.graph_size, config.graph_size], dtype=np.float32)
+            for j in range(config.graph_size):
+                tmp_mask[Q[j], j] = 1.0
+            masks[-1] = np.concatenate([masks[-1], tmp_mask], axis=0)
+        
+        
         #print('-- ' + str(cnt_masks))
         return masks
 
