@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import Model
-from keras.layers import Input
+from keras.layers import Input, Concatenate
 import config
 from made_utils import MaskedDenseLayer, MyEarlyStopping, log_sum_exp
 from dataset import get_data_structure
@@ -147,6 +147,12 @@ class MADE:
                     #    cnt_masks += 1
             print('mask == maks_2 :  ', np.all(mask == mask_2))
             '''
+            if (config.direct_links) and (i == len(labels)-1):
+                tmp_mask = np.zeros(config.graph_size, config.graph_size)
+                for j in range(len(config.graph_size)):
+                    tmp_mask[Q[j], j] = 1.0
+                
+                mask = np.concatenate([mask, tmp_mask], axis=0)
             
             masks.append(mask)
         #print('-- ' + str(cnt_masks))
@@ -195,13 +201,15 @@ class MADE:
                         if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - config.related_size <= labels[i-1][k] )):
                             mask[k][j] = 1.0
                     else:
-                        print("wrong masking method " + masking_methdo)
+                        print("wrong masking method " + masking_method)
     
             masks.append(mask)
         
         #last layer mask
-        mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
-        #last_layer_label = np.random.randint(0, 4, graph_size)
+        if config.direct_links:
+            mask = np.zeros([config.hlayer_size + config.graph_size, config.graph_size], dtype=np.float32)
+        else:
+            mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
         for j in range(0, config.graph_size):
             for k in range(0, config.hlayer_size):
                 if (masking_method == 'orig'):
@@ -212,6 +220,14 @@ class MADE:
                         mask[k][j] = 1.0
                 else:
                     print("wrong masking method " + masking_method)
+            if config.direct_links:
+                for k in range(0, config.graph_size):
+                    if masking_method == 'orig':
+                        if pi[j] > pi[k]:
+                            mask[config.hlayer_size + k][j] = 1.0
+                    elif masking_method == 'min_related':
+                        if (j > k) and (j-config.related_size <= k):
+                            mask[config.hlayer_size + k][j] = 1.0
         masks.append(mask)
         return masks
 
@@ -231,7 +247,11 @@ class MADE:
         hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')( [input_layer, state] )
         for i in range(1,config.num_of_hlayer):
             hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')( [hlayer, state] )
-        output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [hlayer, state] )
+        if config.direct_links:
+            clayer = Concatenate()([hlayer, input_layer])
+            output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer, state] )
+        else:
+            output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [hlayer, state] )
         autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
         
         autoencoder.compile(optimizer=config.optimizer, loss='binary_crossentropy')
