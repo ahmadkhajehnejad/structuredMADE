@@ -177,7 +177,10 @@ class MADE:
         if config.direct_links:
             tmp_mask = np.zeros([config.graph_size, config.graph_size], dtype=np.float32)
             for j in range(config.graph_size):
-                tmp_mask[Q[j], j] = 1.0
+                if config.full_direct_links:
+                    tmp_mask[:j,j] = 1.0
+                else:
+                    tmp_mask[Q[j], j] = 1.0
             masks[-1] = np.concatenate([masks[-1], tmp_mask], axis=0)
         
         
@@ -247,13 +250,13 @@ class MADE:
                 else:
                     print("wrong masking method " + masking_method)
             if config.direct_links:
-                for k in range(0, config.graph_size):
-                    if masking_method == 'orig':
-                        if pi[j] > pi[k]:
-                            mask[config.hlayer_size + k][j] = 1.0
-                    elif masking_method == 'min_related':
-                        if (j > k) and (j-config.related_size <= k):
-                            mask[config.hlayer_size + k][j] = 1.0
+                if masking_method == 'orig':
+                    mask[config.hlayer_size: config.hlayer_size+j, j] = 1.0
+                elif masking_method == 'min_related':
+                    if config.full_direct_links:
+                        mask[config.hlayer_size: config.hlayer_size+j, j] = 1.0
+                    else:
+                        mask[config.hlayer_size+j-config.related_size: config.hlayer_size+j, j] = 1.0
         masks.append(mask)
         return masks
 

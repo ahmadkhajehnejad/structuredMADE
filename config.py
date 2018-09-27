@@ -15,13 +15,14 @@ optimizer = AE_adam
 patience = 2 * num_of_all_masks
 random_dimensions_order = True  #norice that random permutation is just implemented for orig method so far.
 direct_links = True
+full_direct_links = True
 Q_restricted_2_pass = True
 
 train_size = 200
 validation_size = 50
 test_size = 5000
 
-algorithm = 'Q_restricted'#'orig'#'min_related'#'ensemble_Q_restricted_and_orig'#
+algorithm = 'orig'#'min_related'#'Q_restricted'#'ensemble_Q_restricted_and_orig'#
 
 data_name = 'grid'#'mnist'#'Boltzmann'
 
