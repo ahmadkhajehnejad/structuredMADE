@@ -10,7 +10,14 @@ def _get_data_from_file(args):
         
         data = parameters['train_data']
         data_probs = parameters['train_data_probs']
-        
+
+        if config.random_data:
+            rnd_prm = np.random.permutation(len(data))
+            data = data[rnd_prm]
+            #if not(data_probs == None):
+            if data_probs is not None:
+                data_probs = data_probs[rnd_prm]
+
         train_data = data[0:args['train_size']]
         valid_data = data[args['train_size']:(args['train_size']+args['valid_size'])]
         
@@ -29,7 +36,16 @@ def _get_data_from_file(args):
         else:
             data = parameters['test_data']
             data_probs = parameters['test_data_probs']
+
+            if config.random_data:
+                rnd_prm = np.random.permutation(len(data))
+                data = data[rnd_prm]
+
+                #if not(data_probs == None):
+                if data_probs is not None:
+                    data_probs = data_probs[rnd_prm]
             test_data = data[0:args['test_size']]
+
             #if not(data_probs == None):
             if data_probs is not None:
                 test_data_probs = data_probs[0:args['test_size']]

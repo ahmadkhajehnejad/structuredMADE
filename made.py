@@ -224,7 +224,7 @@ class MADE:
             for j in range(0, config.hlayer_size):
                 for k in range(0, config.hlayer_size):
                     if (masking_method == 'orig'):
-                        if (labels[i][j] >= labels[i-1][k]): #and (labels[i][j] >= labels[i-1][k]-width)):
+                        if (labels[i][j] >= labels[i-1][k]):
                             mask[k][j] = 1.0
                     elif masking_method == 'min_related':
                         if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - config.related_size <= labels[i-1][k] )):
@@ -242,7 +242,7 @@ class MADE:
         for j in range(0, config.graph_size):
             for k in range(0, config.hlayer_size):
                 if (masking_method == 'orig'):
-                    if (pi[j] > labels[-1][k]): #and (j >= labels[-1][k]-width)):
+                    if (pi[j] > labels[-1][k]):
                         mask[k][j] = 1.0
                 elif (masking_method == 'min_related'):
                     if ((j > labels[-1][k]) and (j - config.related_size <= labels[-1][k])):
