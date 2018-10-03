@@ -7,23 +7,23 @@ from dataset import get_data_structure
 from keras import optimizers
 
 
-def _spread(current_node, root_node, visited, adj):
+def _spread(current_node, root_node, visited, adj, pi):
         visited[current_node]=True
-        if current_node < root_node:
+        if pi[current_node] < pi[root_node]:
             return
         for nei in range(adj.shape[0]):
             if adj[current_node,nei] == 1 and not visited[nei]:
-                _spread(nei, root_node, visited, adj)
+                _spread(nei, root_node, visited, adj, pi)
                 
                 
     
-def _make_Q(adj):
+def _make_Q(adj, pi):
     n = adj.shape[0]
     Q = [None] * n
     for i in range(n):
         visited = np.zeros([n],dtype=bool)
-        _spread(current_node = i, root_node = i, visited = visited, adj=adj)
-        visited[i:] = False
+        _spread(current_node = i, root_node = i, visited = visited, adj=adj, pi=pi)
+        visited[pi >= i] = False
         Q[i] = np.where(visited)[0]
     return Q    
 
@@ -84,8 +84,12 @@ class MADE:
         mu = [(i+1)/(config.num_of_hlayer+1) for i in range(config.num_of_hlayer)]
     
         
-        ###  We can add different orderings here
-        Q = _make_Q(self.adjacency_matrix)
+        
+        pi = np.arange(config.graph_size)
+        if config.random_dimensions_order == True:
+            pi = np.random.permutation(config.graph_size)
+        
+        Q = _make_Q(self.adjacency_matrix, pi)
         
         
         
