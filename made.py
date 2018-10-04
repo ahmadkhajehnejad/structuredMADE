@@ -23,7 +23,7 @@ def _make_Q(adj, pi):
     for i in range(n):
         visited = np.zeros([n],dtype=bool)
         _spread(current_node = i, root_node = i, visited = visited, adj=adj, pi=pi)
-        visited[pi >= i] = False
+        visited[pi >= pi[i]] = False
         Q[i] = np.where(visited)[0]
     return Q    
 
@@ -90,8 +90,6 @@ class MADE:
             pi = np.random.permutation(config.graph_size)
         
         Q = _make_Q(self.adjacency_matrix, pi)
-        
-        
         
         labels = []
         for i in range(config.num_of_hlayer):
