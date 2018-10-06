@@ -2,10 +2,10 @@ import numpy as np
 from keras.models import Model
 from keras.layers import Input, Concatenate
 import config
-from made_utils import MaskedDenseLayer, MyEarlyStopping, log_sum_exp
+from made_utils import MaskedDenseLayer, MyEarlyStopping#, log_sum_exp
 from dataset import get_data_structure
-from keras import optimizers
-from grid_orders import get_random_order
+#from keras import optimizers
+import grid_orders
 
 
 def _spread(current_node, root_node, visited, adj, pi):
@@ -86,9 +86,14 @@ class MADE:
     
         
         
-        pi = np.arange(config.graph_size)
-        if config.random_dimensions_order == True:
+        if config.random_dimensions_order == False:
+            pi = np.arange(config.graph_size)
+        elif config.random_dimensions_order == True:
             pi = np.random.permutation(config.graph_size)
+        elif config.random_dimensions_order == 'grid':
+            pi,_ = grid_orders.get_random_order(config.width, config.height)
+        else:
+            print('Error')
         
         Q = _make_Q(self.adjacency_matrix, pi)
         
@@ -205,15 +210,18 @@ class MADE:
         
         masks = []
         if masking_method == 'orig':
-            pi = np.arange(config.graph_size)
-            if config.random_dimensions_order:
+            if config.random_dimensions_order == False:
+                pi = np.arange(config.graph_size)
+            elif config.random_dimensions_order == True:
                 pi = np.random.permutation(config.graph_size)
+            else:
+                print('Error')
         elif masking_method == 'min_related':
             if config.random_dimensions_order == False:
                 pi = np.arange(config.graph_size)
                 related_size = config.width
             elif config.random_dimensions_order == 'grid':
-                [pi, related_size] = get_random_order(config.width, config.height)
+                [pi, related_size] = grid_orders.get_random_order(config.width, config.height)
             else:
                 print('Error',config.random_dimensions_order)
         else:
@@ -250,7 +258,7 @@ class MADE:
             masks.append(mask)
         
         #last layer mask
-        mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
+        mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)            
         for j in range(0, config.graph_size):
             for k in range(0, config.hlayer_size):
                 if (masking_method == 'orig'):
@@ -261,8 +269,10 @@ class MADE:
                         mask[k][j] = 1.0
                 else:
                     print("wrong masking method " + masking_method)
-            if config.direct_links != False:
-                tmp_mask = np.zeros([config.graph_size, config.graph_size], dtype=np.float32)
+            
+        if config.direct_links != False:
+            tmp_mask = np.zeros([config.graph_size, config.graph_size], dtype=np.float32)
+            for j in range(0,config.graph_size):
                 if masking_method == 'orig':
                     if (config.direct_links == True) or (config.direct_links == 'Full'):
                         tmp_mask[pi < pi[j], j] = 1.0
@@ -270,12 +280,16 @@ class MADE:
                         print('Error',config.direct_links)
                 elif masking_method == 'min_related':
                     if config.direct_links == 'Full':
-                        mask[pi < pi[j], j] = 1.0
+                        tmp_mask[pi < pi[j], j] = 1.0
                     elif config.direct_links == True:
-                        mask[(pi < pi[j]) & (pi >= pi[j] - related_size), j] = 1.0
+                        ind = (((pi < pi[j]) & (pi >= (pi[j] - related_size))))
+                        if np.any(ind):
+                            tmp_mask[ind, j] = 1.0
                     else:
                         print('Error',config.direct_links)
-                mask = np.concatenate([mask, tmp_mask],axis=0)
+            #print(tmp_mask.shape)
+            mask = np.concatenate([mask, tmp_mask],axis=0)
+            
         masks.append(mask)
         return masks
 
