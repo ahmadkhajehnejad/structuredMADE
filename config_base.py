@@ -13,23 +13,21 @@ patience = 2 * num_of_all_masks
 Q_restricted_2_pass = True
 
 ## grid configs
-width = 4
-height = 4
-related_size = width
+if data_name == 'grid':
+    width = 4
+    height = 4
+    graph_size = width * height
 
 ## mnist configs
-digit = 6
-
+if data_name == 'mnist':
+    width = 14
+    height = 14
+    digit = 6
+    graph_size = width * height
 
 # Boltsmann configs
-n_boltzmann = 10
-m_boltzmann = 10
-
-##############
-
-if data_name == 'grid':
-    graph_size = width * height
-elif data_name == 'mnist':
-    graph_size = 14*14
-elif data_name == 'Boltzmann':
+if data_name == 'Boltzmann':
+    n_boltzmann = 10
+    m_boltzmann = 10
     graph_size = n_boltzmann + m_boltzmann
+##############

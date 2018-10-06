@@ -5,6 +5,7 @@ import config
 from made_utils import MaskedDenseLayer, MyEarlyStopping, log_sum_exp
 from dataset import get_data_structure
 from keras import optimizers
+from grid_orders import get_random_order
 
 
 def _spread(current_node, root_node, visited, adj, pi):
@@ -176,13 +177,15 @@ class MADE:
                 masks[i-1] = _detect_subsets(labels[i-1], labels[i])
         
         
-        if config.direct_links:
+        if config.direct_links != False:
             tmp_mask = np.zeros([config.graph_size, config.graph_size], dtype=np.float32)
             for j in range(config.graph_size):
-                if config.full_direct_links:
-                    tmp_mask[:j,j] = 1.0
-                else:
+                if config.direct_links == 'Full':
+                    tmp_mask[pi < pi[j], j] = 1.0
+                elif config.direct_links == True:
                     tmp_mask[Q[j], j] = 1.0
+                else:
+                    print('Error', config.direct_links)
             masks[-1] = np.concatenate([masks[-1], tmp_mask], axis=0)
         
         
@@ -205,6 +208,16 @@ class MADE:
             pi = np.arange(config.graph_size)
             if config.random_dimensions_order:
                 pi = np.random.permutation(config.graph_size)
+        elif masking_method == 'min_related':
+            if config.random_dimensions_order == False:
+                pi = np.arange(config.graph_size)
+                related_size = config.width
+            elif config.random_dimensions_order == 'grid':
+                [pi, related_size] = get_random_order(config.width, config.height)
+            else:
+                print('Error',config.random_dimensions_order)
+        else:
+            print('Error')
 
         #first layer mask
         mask = np.zeros([config.graph_size, config.hlayer_size], dtype=np.float32)
@@ -214,7 +227,7 @@ class MADE:
                     if (labels[0][j] >= pi[k]):
                         mask[k][j] = 1.0
                 elif masking_method == 'min_related':
-                    if ((labels[0][j] >= k) and (labels[0][j] - config.related_size <= k)): #cant use permutation in our approach
+                    if ((labels[0][j] >= pi[k]) and (labels[0][j] - related_size <= pi[k])):
                         mask[k][j] = 1.0
                 else:
                     print("wrong masking method " + masking_method)
@@ -229,7 +242,7 @@ class MADE:
                         if (labels[i][j] >= labels[i-1][k]):
                             mask[k][j] = 1.0
                     elif masking_method == 'min_related':
-                        if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - config.related_size <= labels[i-1][k] )):
+                        if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - related_size <= labels[i-1][k] )):
                             mask[k][j] = 1.0
                     else:
                         print("wrong masking method " + masking_method)
@@ -237,28 +250,32 @@ class MADE:
             masks.append(mask)
         
         #last layer mask
-        if config.direct_links:
-            mask = np.zeros([config.hlayer_size + config.graph_size, config.graph_size], dtype=np.float32)
-        else:
-            mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
+        mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
         for j in range(0, config.graph_size):
             for k in range(0, config.hlayer_size):
                 if (masking_method == 'orig'):
                     if (pi[j] > labels[-1][k]):
                         mask[k][j] = 1.0
                 elif (masking_method == 'min_related'):
-                    if ((j > labels[-1][k]) and (j - config.related_size <= labels[-1][k])):
+                    if ((pi[j] > labels[-1][k]) and (pi[j] - related_size <= labels[-1][k])):
                         mask[k][j] = 1.0
                 else:
                     print("wrong masking method " + masking_method)
-            if config.direct_links:
+            if config.direct_links != False:
+                tmp_mask = np.zeros([config.graph_size, config.graph_size], dtype=np.float32)
                 if masking_method == 'orig':
-                    mask[config.hlayer_size: config.hlayer_size+j, j] = 1.0
-                elif masking_method == 'min_related':
-                    if config.full_direct_links:
-                        mask[config.hlayer_size: config.hlayer_size+j, j] = 1.0
+                    if (config.direct_links == True) or (config.direct_links == 'Full'):
+                        tmp_mask[pi < pi[j], j] = 1.0
                     else:
-                        mask[config.hlayer_size+j-config.related_size: config.hlayer_size+j, j] = 1.0
+                        print('Error',config.direct_links)
+                elif masking_method == 'min_related':
+                    if config.direct_links == 'Full':
+                        mask[pi < pi[j], j] = 1.0
+                    elif config.direct_links == True:
+                        mask[(pi < pi[j]) & (pi >= pi[j] - related_size), j] = 1.0
+                    else:
+                        print('Error',config.direct_links)
+                mask = np.concatenate([mask, tmp_mask],axis=0)
         masks.append(mask)
         return masks
 
