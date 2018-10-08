@@ -30,4 +30,11 @@ if data_name == 'Boltzmann':
     n_boltzmann = 10
     m_boltzmann = 10
     graph_size = n_boltzmann + m_boltzmann
+    
+# k_sparse configs
+if data_name == 'k_sparse':
+    n_of_k_sparse = 20
+    sparsity_degree = 3
+    graph_size = n_of_k_sparse
+    
 ##############
