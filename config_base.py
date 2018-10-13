@@ -3,7 +3,7 @@ from keras import optimizers
 
 ## General configs
 
-AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1) git commit -m 'mnist for all digits
+AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
 
 num_of_exec = 5
 fit_iter = 1
