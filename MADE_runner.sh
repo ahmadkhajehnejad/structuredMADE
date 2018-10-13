@@ -5,12 +5,12 @@ KERAS_BACKEND=tensorflow
 
 masks_no=10
 hlnum=2
-hlsize_list=(200 300) # (25 50 100)
-rnd_dim_ord=True # False # 'grid'
-direct_links=False # True # 'Full'
-algs_list=('Q_restricted' 'orig') # 'min_related' # 'ensemble_Q_restricted_and_orig'
+hlsize_list=(25 50 100) # (200 300) # 
+rnd_dim_ord=True # False # "'grid'" # 
+direct_links=False # True # 'Full' # 
+algs_list=('orig' 'Q_restricted') # 'min_related' # 'ensemble_Q_restricted_and_orig' # 
 dataset='grid' # 'k_sparse' # 'mnist' # 'Boltzmann' #
-rnd_data=False
+rnd_data=False # True
 
 
 #####################################
@@ -23,7 +23,7 @@ dest_file="config.py"
 
 
 for hlsize in ${hlsize_list[@]}; do
-	for i in 1 2 3 4 5; do
+	for i in 1 2 3 4 5 6 7 8 9 10; do
 		for alg in ${algs_list[@]}; do
 			echo ' ' > $dest_file
 			echo "num_of_all_masks = $masks_no" >> $dest_file
@@ -32,8 +32,8 @@ for hlsize in ${hlsize_list[@]}; do
 			echo "random_dimensions_order = $rnd_dim_ord" >> $dest_file
 			echo "direct_links = $direct_links" >> $dest_file
 			echo "algorithm = '$alg'" >> $dest_file
-			TR=$((200*$i))
-			VAL=$((50*$i))
+			TR=$((100*$i))
+			VAL=$((25*$i))
 			TE=5000
 			echo "train_size = $TR" >> $dest_file
 			echo "validation_size = $VAL" >> $dest_file
