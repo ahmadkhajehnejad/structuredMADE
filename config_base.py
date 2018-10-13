@@ -3,7 +3,8 @@ from keras import optimizers
 
 ## General configs
 
-AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
+AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1) git commit -m 'mnist for all digits
+
 num_of_exec = 5
 fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
@@ -20,9 +21,9 @@ if data_name == 'grid':
 
 ## mnist configs
 if data_name == 'mnist':
-    width = 14
-    height = 14
-    digit = 6
+    width = 28
+    height = 28
+    digit = 'All'
     graph_size = width * height
 
 # Boltsmann configs

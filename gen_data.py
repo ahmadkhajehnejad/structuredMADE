@@ -32,10 +32,12 @@ def _gen_mnist_data(args):
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     trd = np.rint(x_train[y_train == special_digit]/255.0)
     np.random.shuffle(trd)
-    train_data = np.reshape(trd[:,7:21,7:21], (trd.shape[0], 14*14))
+    #train_data = np.reshape(trd[:,7:21,7:21], (trd.shape[0], 14*14))
+    train_data = np.reshape(trd, (trd.shape[0], -1))
     ted = np.rint(x_test[y_test == special_digit]/255.0)
     np.random.shuffle(ted)
-    test_data = np.reshape(ted[:,7:21,7:21], (ted.shape[0], 14*14))
+    #test_data = np.reshape(ted[:,7:21,7:21], (ted.shape[0], 14*14))
+    test_data = np.reshape(ted, (ted.shape[0], -1))
     return {'train_data' : train_data,
             'test_data' : test_data}
     #img = Image.fromarray(trd[154]*255)
@@ -88,6 +90,10 @@ def gen_data(args):
 
 #gen_data({'data_name' : 'grid', 'height' : 4, 'width' : 4, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10, 'train_size' : 20000, 'test_size' : 100000})
-#gen_data({'data_name' : 'mnist', 'digit' : 6})
 #gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
-gen_data({'data_name' : 'rcv1'})
+#gen_data({'data_name' : 'rcv1'})
+'''
+for d in range(10):
+    print(d)
+    gen_data({'data_name' : 'mnist', 'digit' : d})
+'''
