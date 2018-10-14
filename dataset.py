@@ -130,10 +130,12 @@ def get_data_structure():
         for r in range(0, config.height):
             for c in range(0, config.width):
                 jj = r*config.width + c
-                if c > 0:
-                    adj[jj-1][jj] = adj[jj][jj-1] = 1
-                if r > 0:
-                    adj[jj-config.width][jj] = adj[jj][jj-config.width] = 1
+                
+                for t_r in range(-config.dependence_distance, config.dependence_distance+1):
+                    for t_c in range(-config.dependence_distance, config.dependence_distance+1):
+                        if (0 < np.abs(t_r) + np.abs(t_c) <= config.dependence_distance) and (0 <= r+t_r < config.height) and (0 <= c+t_c < config.width):
+                            zz = (r+t_r)*config.width + (c+t_c)
+                            adj[jj,zz] = adj[zz,jj] = 1
         parameters['adjacency_matrix'] = adj
         
     elif config.data_name == 'Boltzmann':

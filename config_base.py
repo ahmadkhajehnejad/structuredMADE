@@ -25,6 +25,7 @@ if data_name == 'mnist':
     height = 28
     digit = 'All'
     graph_size = width * height
+    dependence_distance = 4
 
 # Boltsmann configs
 if data_name == 'Boltzmann':
