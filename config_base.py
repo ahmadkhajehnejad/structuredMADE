@@ -20,12 +20,11 @@ if data_name == 'grid':
     graph_size = width * height
 
 ## mnist configs
-if data_name == 'mnist':
+if data_name.startswith('mnist'):
     width = 28
     height = 28
     digit = 'All'
     graph_size = width * height
-    dependence_distance = 4
 
 # Boltsmann configs
 if data_name == 'Boltzmann':
