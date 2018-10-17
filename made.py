@@ -93,7 +93,7 @@ class MADE:
         elif config.random_dimensions_order == 'grid':
             pi,_ = grid_orders.get_random_order(config.width, config.height)
         else:
-            print('Error')
+            raise Exception('Error')
         
         Q = _make_Q(self.adjacency_matrix, pi)
         
@@ -190,7 +190,7 @@ class MADE:
                 elif config.direct_links == True:
                     tmp_mask[Q[j], j] = 1.0
                 else:
-                    print('Error', config.direct_links)
+                    raise Exception('Error' + str(config.direct_links))
             masks[-1] = np.concatenate([masks[-1], tmp_mask], axis=0)
         
         
@@ -215,7 +215,7 @@ class MADE:
             elif config.random_dimensions_order == True:
                 pi = np.random.permutation(config.graph_size)
             else:
-                print('Error')
+                raise Exception('Error')
         elif masking_method == 'min_related':
             if config.random_dimensions_order == False:
                 pi = np.arange(config.graph_size)
@@ -223,9 +223,9 @@ class MADE:
             elif config.random_dimensions_order == 'grid':
                 [pi, related_size] = grid_orders.get_random_order(config.width, config.height)
             else:
-                print('Error',config.random_dimensions_order)
+                raise Exception('Error' + str(config.random_dimensions_order))
         else:
-            print('Error')
+            raise Exception('Error')
 
         #first layer mask
         mask = np.zeros([config.graph_size, config.hlayer_size], dtype=np.float32)
@@ -238,7 +238,7 @@ class MADE:
                     if ((labels[0][j] >= pi[k]) and (labels[0][j] - related_size <= pi[k])):
                         mask[k][j] = 1.0
                 else:
-                    print("wrong masking method " + masking_method)
+                    raise Exception("wrong masking method " + masking_method)
         masks.append(mask)
         
         #hidden layers mask   
@@ -253,7 +253,7 @@ class MADE:
                         if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - related_size <= labels[i-1][k] )):
                             mask[k][j] = 1.0
                     else:
-                        print("wrong masking method " + masking_method)
+                        raise Exception("wrong masking method " + masking_method)
     
             masks.append(mask)
         
@@ -268,7 +268,7 @@ class MADE:
                     if ((pi[j] > labels[-1][k]) and (pi[j] - related_size <= labels[-1][k])):
                         mask[k][j] = 1.0
                 else:
-                    print("wrong masking method " + masking_method)
+                    raise Exception("wrong masking method " + masking_method)
             
         if config.direct_links != False:
             tmp_mask = np.zeros([config.graph_size, config.graph_size], dtype=np.float32)
@@ -277,7 +277,7 @@ class MADE:
                     if (config.direct_links == True) or (config.direct_links == 'Full'):
                         tmp_mask[pi < pi[j], j] = 1.0
                     else:
-                        print('Error',config.direct_links)
+                        raise Exception('Error' + str(config.direct_links))
                 elif masking_method == 'min_related':
                     if config.direct_links == 'Full':
                         tmp_mask[pi < pi[j], j] = 1.0
@@ -286,7 +286,7 @@ class MADE:
                         if np.any(ind):
                             tmp_mask[ind, j] = 1.0
                     else:
-                        print('Error',config.direct_links)
+                        raise Exception('Error' + str(config.direct_links))
             #print(tmp_mask.shape)
             mask = np.concatenate([mask, tmp_mask],axis=0)
             

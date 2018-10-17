@@ -70,7 +70,7 @@ def get_data(args):
     elif args['data_name'] == 'Boltzmann':
         args['data_file'] = 'datasets/Boltzman_' + str(args['n']) + '&' + str(args['m']) + '.npz'
         return _get_data_from_file(args)
-    elif args['data_name'] == 'mnist':
+    elif args['data_name'].startswith('mnist'):
         if args['digit'] == 'All':
             tr = args['train_size']
             va = args['valid_size']
@@ -98,8 +98,9 @@ def get_data(args):
             
             return res
         else:
-            args['data_file'] = 'datasets/binary_mnist_'+ str(args['digit']) + '.npz'
-            return _get_data_from_file(args)
+            raise Exception("ERROR: mnist should not be run for just one digit")
+            #args['data_file'] = 'datasets/binary_mnist_'+ str(args['digit']) + '.npz'
+            #return _get_data_from_file(args)
     elif args['data_name'] == 'k_sparse':
         args['data_file'] = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
         return _get_data_from_file(args)
@@ -124,16 +125,17 @@ def get_data_structure():
                     adj[jj-config.width][jj] = adj[jj][jj-config.width] = 1
         parameters['adjacency_matrix'] = adj
         
-    elif config.data_name == 'mnist':
+    elif config.data_name.startswith('mnist'):
         graph_size = config.graph_size # 14 * 14
+        dp = int(config.data_name[7:])
         adj = np.zeros([graph_size, graph_size])
         for r in range(0, config.height):
             for c in range(0, config.width):
                 jj = r*config.width + c
                 
-                for t_r in range(-config.dependence_distance, config.dependence_distance+1):
-                    for t_c in range(-config.dependence_distance, config.dependence_distance+1):
-                        if (0 < np.abs(t_r) + np.abs(t_c) <= config.dependence_distance) and (0 <= r+t_r < config.height) and (0 <= c+t_c < config.width):
+                for t_r in range(-dp, dp+1):
+                    for t_c in range(-dp, dp+1):
+                        if (0 < np.abs(t_r) + np.abs(t_c) <= dp) and (0 <= r+t_r < config.height) and (0 <= c+t_c < config.width):
                             zz = (r+t_r)*config.width + (c+t_c)
                             adj[jj,zz] = adj[zz,jj] = 1
         parameters['adjacency_matrix'] = adj
