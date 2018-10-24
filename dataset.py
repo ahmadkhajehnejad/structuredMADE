@@ -127,18 +127,34 @@ def get_data_structure():
         
     elif config.data_name.startswith('mnist'):
         graph_size = config.graph_size # 14 * 14
-        dp = int(config.data_name[7:])
-        adj = np.zeros([graph_size, graph_size])
-        for r in range(0, config.height):
-            for c in range(0, config.width):
-                jj = r*config.width + c
-                
-                for t_r in range(-dp, dp+1):
-                    for t_c in range(-dp, dp+1):
-                        if (0 < np.abs(t_r) + np.abs(t_c) <= dp) and (0 <= r+t_r < config.height) and (0 <= c+t_c < config.width):
-                            zz = (r+t_r)*config.width + (c+t_c)
-                            adj[jj,zz] = adj[zz,jj] = 1
-        parameters['adjacency_matrix'] = adj
+        if config.data_name.startswith('mnistdps'):
+            dp = int(config.data_name[8:])
+            adj = np.zeros([graph_size, graph_size])
+            for r in range(0, config.height):
+                for c in range(0, config.width):
+                    jj = r*config.width + c
+                    
+                    for t_r in range(-dp, dp+1):
+                        for t_c in range(-dp, dp+1):
+                            if (not((t_r == 0) and (t_c == 0))) and (0 <= r+t_r < config.height) and (0 <= c+t_c < config.width):
+                                zz = (r+t_r)*config.width + (c+t_c)
+                                adj[jj,zz] = adj[zz,jj] = 1
+            parameters['adjacency_matrix'] = adj
+        elif config.data_name.startswith('mnistdp'):
+            dp = int(config.data_name[7:])
+            adj = np.zeros([graph_size, graph_size])
+            for r in range(0, config.height):
+                for c in range(0, config.width):
+                    jj = r*config.width + c
+                    
+                    for t_r in range(-dp, dp+1):
+                        for t_c in range(-dp, dp+1):
+                            if (0 < np.abs(t_r) + np.abs(t_c) <= dp) and (0 <= r+t_r < config.height) and (0 <= c+t_c < config.width):
+                                zz = (r+t_r)*config.width + (c+t_c)
+                                adj[jj,zz] = adj[zz,jj] = 1
+            parameters['adjacency_matrix'] = adj
+        else:
+            raise('Unknown dataset: ' + config.data_name)
         
     elif config.data_name == 'Boltzmann':
         n = config.n_boltzmann

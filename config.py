@@ -8,7 +8,7 @@ algorithm = 'orig' # 'Q_restricted'
 train_size = 100
 validation_size = 25
 test_size = 5000
-data_name = 'mnist' # 'k_sparse'
+data_name = 'mnistdps8' # 'k_sparse'
 random_data = False
 from keras import optimizers
 
@@ -16,6 +16,7 @@ from keras import optimizers
 ## General configs
 
 AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
+
 num_of_exec = 5
 fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
@@ -31,12 +32,11 @@ if data_name == 'grid':
     graph_size = width * height
 
 ## mnist configs
-if data_name == 'mnist':
+if data_name.startswith('mnist'):
     width = 28
     height = 28
-    digit = 'All' #6
+    digit = 'All'
     graph_size = width * height
-    dependence_distance = 4
 
 # Boltsmann configs
 if data_name == 'Boltzmann':
