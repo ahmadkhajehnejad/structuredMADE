@@ -6,7 +6,7 @@ def get_random_order(adjacency_matrix):
     
     mark = np.zeros([graph_size])
     queue = np.zeros([graph_size], dtype=int)
-    pi = np.zeros([graph_size])
+    pi = np.zeros([graph_size], dtype=np.int)
     mark[v] = 1
     head = tail = 0
     queue[0] = v

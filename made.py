@@ -201,7 +201,7 @@ class MADE:
     def _normal_mask(self, masking_method):
         #generating subsets as 3d matrix 
         #subsets = np.random.randint(0, 2, (num_of_hlayer, hlayer_size, graph_size))
-        labels = np.zeros([config.num_of_hlayer, config.hlayer_size], dtype=np.float32)
+        labels = np.zeros([config.num_of_hlayer, config.hlayer_size], dtype=int)
         min_label = 0
         for ii in range(config.num_of_hlayer):
             labels[ii][:] = np.random.randint(min_label, config.graph_size, (config.hlayer_size))
@@ -228,8 +228,13 @@ class MADE:
                 raise Exception('Error' + str(config.random_dimensions_order))
             Q = _make_Q(self.adjacency_matrix, pi)
             min_related_pi = np.zeros([config.graph_size])
-            min_related_pi[pi] = np.array([pi[q].min() for q in Q])
-            for i in reversed(range(config.graph_size)):
+            for i in range(len(Q)):
+                if len(Q[i]) > 0:
+                    min_related_pi[pi[i]] = pi[Q[i]].min()
+                else:
+                    min_related_pi[pi[i]] = pi[i]
+            #min_related_pi[pi] = np.array([pi[q].min() if len(q)>0 else  for q in Q])
+            for i in reversed(range(config.graph_size-1)):
                 min_related_pi[i] = min(min_related_pi[i], min_related_pi[i+1])
             #related_size = pi - min_related_pi
                             
