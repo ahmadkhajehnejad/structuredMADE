@@ -6,6 +6,7 @@ from made_utils import MaskedDenseLayer, MyEarlyStopping#, log_sum_exp
 from dataset import get_data_structure
 #from keras import optimizers
 import grid_orders
+import bfs_orders
 
 
 def _spread(current_node, root_node, visited, adj, pi):
@@ -91,7 +92,7 @@ class MADE:
         elif config.random_dimensions_order == True:
             pi = np.random.permutation(config.graph_size)
         elif config.random_dimensions_order == 'grid':
-            pi,_ = grid_orders.get_random_order(config.width, config.height)
+            pi = grid_orders.get_random_order(config.width, config.height)
         else:
             raise Exception('Error')
         
@@ -219,11 +220,19 @@ class MADE:
         elif masking_method == 'min_related':
             if config.random_dimensions_order == False:
                 pi = np.arange(config.graph_size)
-                related_size = config.width
             elif config.random_dimensions_order == 'grid':
-                [pi, related_size] = grid_orders.get_random_order(config.width, config.height)
+                pi = grid_orders.get_random_order(config.width, config.height)
+            elif config.random_dimensions_order == 'bfs':
+                pi = bfs_orders.get_random_order(config.width, config.height)
             else:
                 raise Exception('Error' + str(config.random_dimensions_order))
+            Q = _make_Q(self.adjacency_matrix, pi)
+            min_related_pi = np.zeros([config.graph_size])
+            min_related_pi[pi] = np.array([pi[q].min() for q in Q])
+            for i in reversed(range(config.graph_size)):
+                min_related_pi[i] = min(min_related_pi[i], min_related_pi[i+1])
+            #related_size = pi - min_related_pi
+                            
         else:
             raise Exception('Error')
 
@@ -235,7 +244,8 @@ class MADE:
                     if (labels[0][j] >= pi[k]):
                         mask[k][j] = 1.0
                 elif masking_method == 'min_related':
-                    if ((labels[0][j] >= pi[k]) and (labels[0][j] - related_size <= pi[k])):
+                    #if ((labels[0][j] >= pi[k]) and (labels[0][j] - related_size <= pi[k])):
+                    if ((labels[0][j] >= pi[k]) and (min_related_pi[ labels[0][j] ] <= pi[k])):
                         mask[k][j] = 1.0
                 else:
                     raise Exception("wrong masking method " + masking_method)
@@ -250,7 +260,8 @@ class MADE:
                         if (labels[i][j] >= labels[i-1][k]):
                             mask[k][j] = 1.0
                     elif masking_method == 'min_related':
-                        if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - related_size <= labels[i-1][k] )):
+                        #if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - related_size <= labels[i-1][k] )):
+                        if ((labels[i][j] >= labels[i-1][k]) and (min_related_pi[labels[i][j]] <= labels[i-1][k] )):
                             mask[k][j] = 1.0
                     else:
                         raise Exception("wrong masking method " + masking_method)
@@ -265,7 +276,8 @@ class MADE:
                     if (pi[j] > labels[-1][k]):
                         mask[k][j] = 1.0
                 elif (masking_method == 'min_related'):
-                    if ((pi[j] > labels[-1][k]) and (pi[j] - related_size <= labels[-1][k])):
+                    #if ((pi[j] > labels[-1][k]) and (pi[j] - related_size <= labels[-1][k])):
+                    if ((pi[j] > labels[-1][k]) and (min_related_pi[pi[j]] <= labels[-1][k])):
                         mask[k][j] = 1.0
                 else:
                     raise Exception("wrong masking method " + masking_method)
@@ -282,7 +294,8 @@ class MADE:
                     if config.direct_links == 'Full':
                         tmp_mask[pi < pi[j], j] = 1.0
                     elif config.direct_links == True:
-                        ind = (((pi < pi[j]) & (pi >= (pi[j] - related_size))))
+                        #ind = (((pi < pi[j]) & (pi >= (pi[j] - related_size))))
+                        ind = (((pi < pi[j]) & (pi >= (min_related_pi[pi[j]]))))
                         if np.any(ind):
                             tmp_mask[ind, j] = 1.0
                     else:
