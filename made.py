@@ -48,7 +48,7 @@ def _detect_subsets(labels_1, labels_2):
 class MADE:
     def __init__(self):
         self.masking_method = config.algorithm
-        if self.masking_method in ['Q_restricted', 'ensemble_Q_restricted_and_orig']:
+        if self.masking_method in ['Q_restricted', 'ensemble_Q_restricted_and_orig', 'min_related']:
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
         self.all_masks = self.generate_all_masks()
@@ -223,7 +223,7 @@ class MADE:
             elif config.random_dimensions_order == 'grid':
                 pi = grid_orders.get_random_order(config.width, config.height)
             elif config.random_dimensions_order == 'bfs':
-                pi = bfs_orders.get_random_order(config.width, config.height)
+                pi = bfs_orders.get_random_order(self.adjacency_matrix)
             else:
                 raise Exception('Error' + str(config.random_dimensions_order))
             Q = _make_Q(self.adjacency_matrix, pi)
