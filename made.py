@@ -224,6 +224,8 @@ class MADE:
         elif masking_method == 'min_related':
             if config.random_dimensions_order == False:
                 pi = np.arange(config.graph_size)
+            elif config.random_dimensions_order == True:
+                pi = np.random.permutation(config.graph_size)
             elif config.random_dimensions_order == 'grid':
                 pi = grid_orders.get_random_order(config.width, config.height)
             elif config.random_dimensions_order == 'bfs':
