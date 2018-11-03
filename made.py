@@ -224,6 +224,8 @@ class MADE:
         elif masking_method == 'min_related':
             if config.random_dimensions_order == False:
                 pi = np.arange(config.graph_size)
+            elif config.random_dimensions_order == True:
+                pi = np.random.permutation(config.graph_size)
             elif config.random_dimensions_order == 'grid':
                 pi = grid_orders.get_random_order(config.width, config.height)
             elif config.random_dimensions_order == 'bfs':
@@ -241,7 +243,6 @@ class MADE:
             for i in reversed(range(config.graph_size-1)):
                 min_related_pi[i] = min(min_related_pi[i], min_related_pi[i+1])
             #related_size = pi - min_related_pi
-                            
         else:
             raise Exception('Error')
 
