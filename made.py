@@ -7,7 +7,7 @@ from dataset import get_data_structure
 #from keras import optimizers
 import grid_orders
 import bfs_orders
-
+import threading
 
 def _spread(current_node, root_node, visited, adj, pi):
         visited[current_node]=True
@@ -17,16 +17,23 @@ def _spread(current_node, root_node, visited, adj, pi):
             if adj[current_node,nei] == 1 and not visited[nei]:
                 _spread(nei, root_node, visited, adj, pi)
                 
-                
+
+def thread_func(Q,adj,pi,index):
+    n = len(Q)
+    visited = np.zeros([n],dtype=bool)
+    _spread(current_node = index, root_node = index, visited = visited, adj=adj, pi=pi)
+    visited[pi >= pi[index]] = False
+    Q[index] = np.where(visited)[0]
     
 def _make_Q(adj, pi):
     n = adj.shape[0]
     Q = [None] * n
+    thr = [None] * n
     for i in range(n):
-        visited = np.zeros([n],dtype=bool)
-        _spread(current_node = i, root_node = i, visited = visited, adj=adj, pi=pi)
-        visited[pi >= pi[i]] = False
-        Q[i] = np.where(visited)[0]
+        thr[i] = threading.Thread(target=thread_func, args=[Q,adj,pi,i])
+        thr[i].start()
+    for i in range(n):
+        thr[i].join()
     return Q    
 
 
