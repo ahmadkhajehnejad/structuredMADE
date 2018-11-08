@@ -7,7 +7,9 @@ from dataset import get_data_structure
 #from keras import optimizers
 import grid_orders
 import bfs_orders
-import threading
+#import threading
+from multiprocessing import Process, Queue
+import sys
 
 def _spread(current_node, root_node, visited, adj, pi):
         visited[current_node]=True
@@ -18,22 +20,29 @@ def _spread(current_node, root_node, visited, adj, pi):
                 _spread(nei, root_node, visited, adj, pi)
                 
 
-def thread_func(Q,adj,pi,index):
-    n = len(Q)
+#def thread_func(Q,adj,pi,index):
+    #n = len(Q)
+def thread_func(shared_space,n,adj,pi,index):
     visited = np.zeros([n],dtype=bool)
     _spread(current_node = index, root_node = index, visited = visited, adj=adj, pi=pi)
     visited[pi >= pi[index]] = False
-    Q[index] = np.where(visited)[0]
+    shared_space.put(np.where(visited)[0])
+    print(index,' finished')
+    sys.stdout.flush()
     
 def _make_Q(adj, pi):
     n = adj.shape[0]
-    Q = [None] * n
+    shared_space = [None] * n
     thr = [None] * n
     for i in range(n):
-        thr[i] = threading.Thread(target=thread_func, args=[Q,adj,pi,i])
+        #thr[i] = threading.Thread(target=thread_func, args=[Q,adj,pi,i])
+        shared_space[i] = Queue()
+        thr[i] = Process(target=thread_func, args=[shared_space[i],n,adj,pi,i])
         thr[i].start()
+    Q = [None] * n
     for i in range(n):
         thr[i].join()
+        Q[i] = shared_space[i].get()
     return Q    
 
 
