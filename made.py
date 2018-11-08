@@ -26,24 +26,28 @@ def thread_func(shared_space,n,adj,pi,index):
     visited = np.zeros([n],dtype=bool)
     _spread(current_node = index, root_node = index, visited = visited, adj=adj, pi=pi)
     visited[pi >= pi[index]] = False
-    shared_space.put(np.where(visited)[0])
+    #conn.send(np.where(visited)[0])
+    shared_space.put( [index, np.where(visited)[0]] )
     print(index,' finished')
     sys.stdout.flush()
-    
+
 def _make_Q(adj, pi):
     n = adj.shape[0]
-    shared_space = [None] * n
+    shared_space = Queue()
     thr = [None] * n
-    for i in range(n):
-        #thr[i] = threading.Thread(target=thread_func, args=[Q,adj,pi,i])
-        shared_space[i] = Queue()
-        thr[i] = Process(target=thread_func, args=[shared_space[i],n,adj,pi,i])
-        thr[i].start()
     Q = [None] * n
     for i in range(n):
+        #thr[i] = threading.Thread(target=thread_func, args=[Q,adj,pi,i])
+        thr[i] = Process(target=thread_func, args=[shared_space,n,adj,pi,i])
+        thr[i].start()
+    for i in range(n):
+        res = shared_space.get()
+        Q[res[0]] = res[1]
+    for i in range(n):
         thr[i].join()
-        Q[i] = shared_space[i].get()
-    return Q    
+        thr[i].terminate()
+    shared_space.close()
+    return Q
 
 
 def _detect_subsets(labels_1, labels_2):
