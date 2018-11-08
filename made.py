@@ -28,8 +28,8 @@ def thread_func(shared_space,n,adj,pi,index):
     visited[pi >= pi[index]] = False
     #conn.send(np.where(visited)[0])
     shared_space.put( [index, np.where(visited)[0]] )
-    print(index,' finished')
-    sys.stdout.flush()
+    #print(index,' finished')
+    #sys.stdout.flush()
 
 def _make_Q(adj, pi):
     n = adj.shape[0]
@@ -381,7 +381,7 @@ class MADE:
                                   validation_data=([reped_validdata, reped_state_valid],
                                                     [reped_validdata]),
                                   callbacks=[early_stop],
-                                  verbose=1)
+                                  verbose=0)
     def predict(self, test_data):
         test_size = test_data.shape[0]
         probs = np.zeros([config.num_of_all_masks, test_size])
