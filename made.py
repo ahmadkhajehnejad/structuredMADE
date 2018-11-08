@@ -3,6 +3,7 @@ from keras.models import Model
 from keras.layers import Input, Concatenate
 import config
 from made_utils import MaskedDenseLayer, MyEarlyStopping#, log_sum_exp
+import made_utils
 from dataset import get_data_structure
 #from keras import optimizers
 import grid_orders
@@ -71,7 +72,8 @@ class MADE:
         if (self.masking_method in ['Q_restricted', 'ensemble_Q_restricted_and_orig', 'min_related']) or (config.random_dimensions_order in ['bfs']):
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
-        self.all_masks = self.generate_all_masks()
+        made_utils.MDL_masks = self.generate_all_masks()
+        self.all_masks = made_utils.MDL_masks
         
         self.autoencoder = self.build_autoencoder()
         self.train_end_epochs = []
@@ -349,14 +351,14 @@ class MADE:
         input_layer = Input(shape=(config.graph_size,))
         state = Input(shape=(1,), dtype = "int32")
     
-        hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')( [input_layer, state] )
+        hlayer = MaskedDenseLayer(config.hlayer_size, 0, 'relu')( [input_layer, state] )
         for i in range(1,config.num_of_hlayer):
-            hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')( [hlayer, state] )
+            hlayer = MaskedDenseLayer(config.hlayer_size, i, 'relu')( [hlayer, state] )
         if config.direct_links:
             clayer = Concatenate()([hlayer, input_layer])
-            output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer, state] )
+            output_layer = MaskedDenseLayer(config.graph_size, -1, 'sigmoid')( [clayer, state] )
         else:
-            output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [hlayer, state] )
+            output_layer = MaskedDenseLayer(config.graph_size, -1, 'sigmoid')( [hlayer, state] )
         autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
         
         autoencoder.compile(optimizer=config.optimizer, loss='binary_crossentropy')
