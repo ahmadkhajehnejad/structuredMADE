@@ -3,6 +3,7 @@ from keras import optimizers
 
 ## General configs
 
+use_multiprocessing = False
 AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
 
 num_of_exec = 5
