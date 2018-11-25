@@ -123,6 +123,8 @@ class MADE:
             pi = np.random.permutation(config.graph_size)
         elif config.random_dimensions_order == 'grid':
             pi = grid_orders.get_random_order(config.width, config.height)
+        elif config.random_dimensions_order == 'bfs':
+            pi = bfs_orders.get_random_order(self.adjacency_matrix)
         else:
             raise Exception('Error')
         
