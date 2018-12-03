@@ -38,5 +38,10 @@ if data_name == 'k_sparse':
     n_of_k_sparse = 20
     sparsity_degree = 3
     graph_size = n_of_k_sparse
-    
+
+# BayesNet configs
+if data_name == 'BayesNet':
+    n_of_BayesNet = 100
+    par_num_of_Bayesnet = 5
+    graph_size = n_of_BayesNet    
 ##############
