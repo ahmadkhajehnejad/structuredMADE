@@ -95,7 +95,47 @@ def gen_params(args):
                  cum_probs = cum_probs,
                  graph_size = len(w_v)
                  )
+        
+    elif args['data_name'] == 'BayesNet':
+        with np.load('dataset_structures/BayesNet_' + str(args['n']) + '_' + str(args['par_num']) + '_structure.npz') as parameters:
+            adjacency_matrix = parameters['adjacency_matrix']
+            par = parameters['par']
+            
+        n = len(par)
+        theta_select = []
+        for i in range(n):
+            k = len(par[i])
+            if k == 0:
+                theta_select.append(np.array([]))
+            else:
+                w = np.random.sample(k)
+                w = w / sum(w)
+                w[-1] = 1 - np.sum(w[:-1])
+                theta_select.append(w)
+        theta_flip = np.random.sample(n)
+        all_outcomes = _Bayes_net_sample_generate(par, theta_select, theta_flip, 40000)
+        np.savez('dataset_parameters/BayesNet_' + str(n) + '_' + str(args['par_num']) + '_parameters.npz',
+                 theta_select = theta_select,
+                 theta_flip = theta_flip,
+                 all_outcomes = all_outcomes)
+
+def _Bayes_net_sample_generate(par, theta_select, theta_flip, num_samples):
+    n = len(theta_select)
+    all_outcomes = []
+    for sn in range(num_samples):
+        outcome = np.zeros(n)
+        outcome[0] = 1 if np.random.sample() < theta_flip[0] else 0
+        for i in range(1,n):
+            ind = np.where(np.random.multinomial(1, theta_select[i]) > 0)[0]
+            a = outcome[par[i][ind]]
+            a = 1-a if np.random.sample() < theta_flip[i] else a
+            
+            outcome[i] = a
+            
+        all_outcomes.append(outcome)
+    return all_outcomes
     
 #gen_params({'data_name' : 'grid', 'height' : 4, 'width' : 4})
 #gen_params({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10})
-gen_params({'data_name' : 'k_sparse', 'sparsity_degree' : 3, 'n' : 20})
+#gen_params({'data_name' : 'k_sparse', 'sparsity_degree' : 3, 'n' : 20})
+gen_params({'data_name' : 'BayesNet', 'par_num' : 5, 'n' : 100})

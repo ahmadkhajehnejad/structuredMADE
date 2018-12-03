@@ -107,6 +107,9 @@ def get_data(args):
     elif args['data_name'] == 'rcv1':
         args['data_file'] = 'datasets/rcv1.npz'
         return _get_data_from_file(args)
+    elif args['data_name'] == 'BayesNet':
+        args['data_file'] = 'datasets/BayesNet_' + str(args['n']) + '_' + str(args['par_num']) + '.npz'
+        return _get_data_from_file(args)
     else:
         return None
 

@@ -39,6 +39,9 @@ def execute_one_round():
     elif args['data_name'] == 'k_sparse':
         args['n'] = config.n_of_k_sparse
         args['sparsity_degree'] = config.sparsity_degree
+    elif args['data_name'] == 'BayesNet':
+        args['n'] = config.n_of_BayesNet
+        args['par_num'] = config.par_num_of_BayesNet
     elif args['data_name'].startswith('mnist'):
         args['digit'] = config.digit
     

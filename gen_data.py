@@ -1,7 +1,23 @@
 import numpy as np
 from keras.datasets import mnist
 
-def _gen_Ising_data(args):
+def _uniform_sample_data_from_param_file(args):
+    
+    with np.load(args['parameters_file']) as parameters:
+        all_outcomes = parameters['all_outcomes']
+
+    rnd_prm = np.random.permutation(len(all_outcomes))
+    all_outcomes = all_outcomes[rnd_prm]
+    
+    train_data = all_outcomes[:args['train_size']]
+    test_data = all_outcomes[args['train_size']:args['train_size']+args['test_size']]
+            
+    return {'train_data' : train_data,
+            'test_data' : test_data
+            }
+
+
+def _sample_data_from_param_file(args):
     
     with np.load(args['parameters_file']) as parameters:
         all_outcomes = parameters['all_outcomes']
@@ -47,15 +63,15 @@ def _gen_mnist_data(args):
 def gen_data(args):
     if args['data_name'] == 'grid':
         args['parameters_file'] = 'dataset_parameters/grid' + str(args['height']) + 'by' + str(args['width']) + '_parameters.npz'
-        dt = _gen_Ising_data(args)
+        dt = _sample_data_from_param_file(args)
         dest_file = 'datasets/grid' + str(args['height']) + 'by' + str(args['width']) + '.npz'
     elif args['data_name'] == 'Boltzmann':
         args['parameters_file'] = 'dataset_parameters/Boltzman_' + str(args['n']) + '&' + str(args['m']) + '_parameters.npz'
-        dt = _gen_Ising_data(args)
+        dt = _sample_data_from_param_file(args)
         dest_file = 'datasets/Boltzman_' + str(args['n']) + '&' + str(args['m']) + '.npz'
     elif args['data_name'] == 'k_sparse':
         args['parameters_file'] = 'dataset_parameters/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '_parameters.npz'
-        dt = _gen_Ising_data(args)
+        dt = _sample_data_from_param_file(args)
         dest_file = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
     elif args['data_name'] == 'mnist':
         dt = _gen_mnist_data(args)
@@ -76,6 +92,14 @@ def gen_data(args):
         dt['train_data_probs'] = None
         dt['test_data_probs'] = None
         dest_file = 'datasets/rcv1.npz'
+    elif args['data_name'] == 'BayesNet':
+        args['parameters_file'] = 'dataset_parameters/BayesNet_' + str(args['n']) + '_' + str(args['par_num']) + '_parameters.npz'
+        dt = _uniform_sample_data_from_param_file(args)
+        dt['all_outcomes'] = None
+        dt['prob_of_outcomes'] = None
+        dt['train_data_probs'] = None
+        dt['test_data_probs'] = None
+        dest_file = 'datasets/BayesNet_' + str(args['n']) + '_' + str(args['par_num']) + '.npz'
     
         
         
@@ -97,3 +121,4 @@ for d in range(10):
     print(d)
     gen_data({'data_name' : 'mnist', 'digit' : d})
 '''
+gen_data({'data_name' : 'BayesNet', 'n' : 100, 'par_num' : 5, 'train_size' : 20000, 'test_size' : 20000})
