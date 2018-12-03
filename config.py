@@ -53,6 +53,6 @@ if data_name == 'k_sparse':
 # BayesNet configs
 if data_name == 'BayesNet':
     n_of_BayesNet = 100
-    par_num_of_Bayesnet = 5
+    par_num_of_BayesNet = 5
     graph_size = n_of_BayesNet    
 ##############    
