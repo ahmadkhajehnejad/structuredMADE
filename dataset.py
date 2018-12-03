@@ -176,6 +176,6 @@ def get_data_structure():
         with np.load('dataset_structures/rcv1_structure.npz') as params:
             parameters['adjacency_matrix'] = params['adjacency_matrix']
     elif config.data_name == 'BayesNet':
-        with np.load('dataset_structures/BayesNet_' + str(config.n_of_BayesNet) + '_' + str(config.par_num_of_Bayesnet) + '_structure.npz') as params:
+        with np.load('dataset_structures/BayesNet_' + str(config.n_of_BayesNet) + '_' + str(config.par_num_of_BayesNet) + '_structure.npz') as params:
             parameters['adjacency_matrix'] = params['adjacency_matrix']        
     return parameters
