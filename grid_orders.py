@@ -67,6 +67,5 @@ def get_partially_random_order(width, height, num_parts, initial_fixed_order=Fal
         pi = np.arange(width*height)
     else:
         pi = get_random_order(width, height)
-    print(pi)
     return _get_partially_permuted(pi, num_parts)
     
