@@ -48,4 +48,25 @@ def get_random_order(width, height):
     #print(t,':')
     #print(pi.reshape([height, width]))
     return pi
-        
+
+
+
+def _get_partially_permuted(pi, num_parts):
+    n = len(pi)
+    sz = int(n // num_parts)
+    part_size = np.ones(num_parts, dtype=int) * sz
+    part_size[:n - (sz * num_parts)] += 1
+    points = np.concatenate([[0], np.cumsum(part_size)])
+    for k in range(num_parts):
+        tmp = pi[points[k]:points[k+1]]
+        pi[points[k]:points[k+1]] = tmp[np.random.permutation(len(tmp))]
+    return pi
+
+def get_partially_random_order(width, height, num_parts, initial_fixed_order=False):
+    if initial_fixed_order:
+        pi = np.arange(width*height)
+    else:
+        pi = get_random_order(width, height)
+    print(pi)
+    return _get_partially_permuted(pi, num_parts)
+    
