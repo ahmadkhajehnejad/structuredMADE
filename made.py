@@ -125,10 +125,12 @@ class MADE:
             pi = grid_orders.get_random_order(config.width, config.height)
         elif config.random_dimensions_order == 'bfs':
             pi = bfs_orders.get_random_order(self.adjacency_matrix)
-        elif config.random_dimensions_order == 'grid_partial_random':
-            pi = grid_orders.get_partially_random_order(config.width, config.height, 10, False)
-        elif config.random_dimensions_order == 'fixed_partial_random':
-            pi = grid_orders.get_partially_random_order(config.width, config.height, 10, True)
+        elif config.random_dimensions_order.startswith('grid_partial_random'):
+            num_parts = int(config.random_dimensions_order[19:])
+            pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, False)
+        elif config.random_dimensions_order.startswith('fixed_partial_random'):
+            num_parts = int(config.random_dimensions_order[20:])
+            pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
         else:
             raise Exception('Error')
         
@@ -255,10 +257,12 @@ class MADE:
                 pi = grid_orders.get_random_order(config.width, config.height)
             elif config.random_dimensions_order == 'bfs':
                 pi = bfs_orders.get_random_order(self.adjacency_matrix)
-            elif config.random_dimensions_order == 'grid_partial_random':
-                pi = grid_orders.get_partially_random_order(config.width, config.height, 10, False)
-            elif config.random_dimensions_order == 'fixed_partial_random':
-                pi = grid_orders.get_partially_random_order(config.width, config.height, 10, True)
+            elif config.random_dimensions_order.startswith('grid_partial_random'):
+                num_parts = int(config.random_dimensions_order[19:])
+                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, False)
+            elif config.random_dimensions_order.startswith('fixed_partial_random'):
+                num_parts = int(config.random_dimensions_order[20:])
+                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
             else:
                 raise Exception('Error' + str(config.random_dimensions_order))
         elif masking_method == 'min_related':
@@ -270,10 +274,12 @@ class MADE:
                 pi = grid_orders.get_random_order(config.width, config.height)
             elif config.random_dimensions_order == 'bfs':
                 pi = bfs_orders.get_random_order(self.adjacency_matrix)
-            elif config.random_dimensions_order == 'grid_partial_random':
-                pi = grid_orders.get_partially_random_order(config.width, config.height, 10, False)
-            elif config.random_dimensions_order == 'fixed_partial_random':
-                pi = grid_orders.get_partially_random_order(config.width, config.height, 10, True)
+            elif config.random_dimensions_order.startswith('grid_partial_random'):
+                num_parts = int(config.random_dimensions_order[19:])
+                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, False)
+            elif config.random_dimensions_order.startswith('fixed_partial_random'):
+                num_parts = int(config.random_dimensions_order[20:])
+                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
             else:
                 raise Exception('Error' + str(config.random_dimensions_order))
             Q = _make_Q(self.adjacency_matrix, pi)
