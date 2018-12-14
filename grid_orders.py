@@ -58,8 +58,10 @@ def _get_partially_permuted(pi, num_parts):
     part_size[:n - (sz * num_parts)] += 1
     points = np.concatenate([[0], np.cumsum(part_size)])
     for k in range(num_parts):
-        tmp = pi[points[k]:points[k+1]]
-        pi[points[k]:points[k+1]] = tmp[np.random.permutation(len(tmp))]
+        ind = (points[k] <= pi) & (pi < points[k+1])
+        tmp = np.arange(points[k], points[k+1])
+        np.random.shuffle(tmp)
+        pi[ind] = tmp
     return pi
 
 def get_partially_random_order(width, height, num_parts, initial_fixed_order=False):
