@@ -77,7 +77,7 @@ def _detect_subsets(labels_1, labels_2):
 class MADE:
     def __init__(self):
         self.masking_method = config.algorithm
-        if (self.masking_method in ['Q_restricted', 'ensemble_Q_restricted_and_orig', 'min_related']) or (config.random_dimensions_order in ['bfs']):
+        if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related']) or (config.random_dimensions_order in ['bfs']):
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
         made_utils.MDL_masks = self.generate_all_masks()
@@ -91,6 +91,9 @@ class MADE:
         if self.masking_method == 'Q_restricted':
             for i_m in range(0,config.num_of_all_masks):                
                 all_masks.append(self._Q_restricted_mask())
+        if self.masking_method == 'random_Q_restricted':
+            for i_m in range(0, config.num_of_all_masks):
+                all_masks.append(self._Q_restricted_mask(random_Q=True))
         elif self.masking_method == 'ensemble_Q_restricted_and_orig':
             for i_m in range(0, config.num_of_all_masks // 2):                
                 all_masks.append(self._Q_restricted_mask())
@@ -111,7 +114,7 @@ class MADE:
         #all_masks = [[x*1.0 for x in y] for y in all_masks]
         return swapped_all_masks
 
-    def _Q_restricted_mask(self):
+    def _Q_restricted_mask(self, random_Q=False):
         ### We can change it
         mu = [(i+1)/(config.num_of_hlayer+1) for i in range(config.num_of_hlayer)]
     
@@ -135,7 +138,14 @@ class MADE:
             raise Exception('Error')
         
         Q = _make_Q(self.adjacency_matrix, pi)
-        
+
+        if random_Q:
+            for i in range(config.graph_size):
+                if pi[i] > 0:
+                    precedings = np.where(pi < pi[i])[0]
+                    Q[i] = np.random.choice(precedings, len(Q[i]), replace=False)
+
+
         labels = []
         for i in range(config.num_of_hlayer):
             labels.append([None] * config.hlayer_size)

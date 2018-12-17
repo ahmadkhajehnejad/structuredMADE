@@ -218,7 +218,7 @@ def get_data_structure():
             parameters['adjacency_matrix'] = params['adjacency_matrix']        
     return parameters
 
-data = get_data({'data_name' : 'ocr', 'train_size' : 200, 'valid_size' : 50, 'test_size': 5000})
-print(data['train_data'].shape[0])
-print(data['valid_data'].shape[0])
-print(data['test_data'].shape[0])
+#data = get_data({'data_name' : 'ocr', 'train_size' : 200, 'valid_size' : 50, 'test_size': 5000})
+#print(data['train_data'].shape[0])
+#print(data['valid_data'].shape[0])
+#print(data['test_data'].shape[0])
