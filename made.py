@@ -91,7 +91,7 @@ class MADE:
         if self.masking_method == 'Q_restricted':
             for i_m in range(0,config.num_of_all_masks):                
                 all_masks.append(self._Q_restricted_mask())
-        if self.masking_method == 'random_Q_restricted':
+        elif self.masking_method == 'random_Q_restricted':
             for i_m in range(0, config.num_of_all_masks):
                 all_masks.append(self._Q_restricted_mask(random_Q=True))
         elif self.masking_method == 'ensemble_Q_restricted_and_orig':
