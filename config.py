@@ -1,14 +1,15 @@
- 
-num_of_all_masks = 10
+
+use_multiprocessing = True
+num_of_all_masks = 1
 num_of_hlayer = 2
 hlayer_size = 1200
-random_dimensions_order = True
-direct_links = True
-algorithm = 'orig' # 'Q_restricted'
+random_dimensions_order = 'grid_partial_random_4'
+direct_links = 'Full'
+algorithm = 'min_related'
 train_size = 100
-validation_size = 25
+validation_size = 100
 test_size = 5000
-data_name = 'mnistdps8' # 'k_sparse'
+data_name = 'ocrdp1' # 'grid' # 'mnistdps8' # 'k_sparse'
 random_data = False
 from keras import optimizers
 
@@ -17,7 +18,7 @@ from keras import optimizers
 
 AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
 
-num_of_exec = 5
+num_of_exec = 1
 fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
 batch_size = 50
@@ -54,5 +55,15 @@ if data_name == 'k_sparse':
 if data_name == 'BayesNet':
     n_of_BayesNet = 100
     par_num_of_BayesNet = 5
-    graph_size = n_of_BayesNet    
+    graph_size = n_of_BayesNet
+
+# ocr
+if data_name.startswith('ocr'):
+    width = 8
+    height = 16
+    graph_size = width * height
+    ocr_characters = [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 24, 25]
+    # ocr_num_character_samples = [4034, 1284, 2114, 1442, 4955,  921, 2472,  861, 4913,\
+    #                             189,  909, 3140, 1602, 5024, 3897, 1377,  341, 2673,\
+    #                             1394, 2136, 2562,  664, 520,  413, 1221, 1094]
 ##############    

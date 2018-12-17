@@ -60,6 +60,26 @@ def _gen_mnist_data(args):
     #img.show()
 
 
+def _gen_ocr_data(args):
+    with open('datasets/letter.data', 'r') as fin:
+        lines = fin.readlines()
+    data = []
+    for line in lines:
+        l_dt = line.split('\t')
+        if ord(l_dt[1]) - ord('a') == args['ascii']:
+            data.append(np.array([float(k) for k in l_dt[6:-1]]))
+
+    data = np.concatenate([l.reshape([1, -1]) for l in data])
+    np.random.shuffle(data)
+
+    test_size = data.shape[0] // 5
+    train_size = data.shape[0] - test_size
+    train_data = data[:train_size,:]
+    test_data = data[train_size:train_size+test_size]
+    return {'train_data' : train_data,
+            'test_data' : test_data}
+
+
 def gen_data(args):
     if args['data_name'] == 'grid':
         args['parameters_file'] = 'dataset_parameters/grid' + str(args['height']) + 'by' + str(args['width']) + '_parameters.npz'
@@ -80,6 +100,13 @@ def gen_data(args):
         dt['train_data_probs'] = None
         dt['test_data_probs'] = None
         dest_file = 'datasets/binary_mnist_' + str(args['digit']) + '.npz'
+    elif args['data_name'] == 'ocr':
+        dt = _gen_ocr_data(args)
+        dt['all_outcomes'] = None
+        dt['prob_of_outcomes'] = None
+        dt['train_data_probs'] = None
+        dt['test_data_probs'] = None
+        dest_file = 'datasets/ocr_' + str(args['ascii']) + '.npz'
     elif args['data_name'] == 'rcv1':
         rcv1 = np.load('datasets/rcv1_orig.npz')
         tr = np.concatenate( [rcv1['train_data'], rcv1['valid_data']] ).copy()
@@ -121,4 +148,7 @@ for d in range(10):
     print(d)
     gen_data({'data_name' : 'mnist', 'digit' : d})
 '''
-gen_data({'data_name' : 'BayesNet', 'n' : 100, 'par_num' : 5, 'train_size' : 20000, 'test_size' : 20000})
+#gen_data({'data_name' : 'BayesNet', 'n' : 100, 'par_num' : 5, 'train_size' : 20000, 'test_size' : 20000})
+for i in range(26):
+    print(i)
+    gen_data({'data_name' : 'ocr', 'ascii' : i})

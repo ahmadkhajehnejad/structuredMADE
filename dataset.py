@@ -101,6 +101,38 @@ def get_data(args):
             raise Exception("ERROR: mnist should not be run for just one digit")
             #args['data_file'] = 'datasets/binary_mnist_'+ str(args['digit']) + '.npz'
             #return _get_data_from_file(args)
+    elif args['data_name'].startswith('ocr'):
+        tr = args['train_size']
+        va = args['valid_size']
+        te = args['test_size']
+
+        args['train_size'] = tr // 20
+        args['valid_size'] = va // 20
+        args['test_size'] = te // 20
+        args['data_file'] = 'datasets/ocr_' + str(config.ocr_characters[0]) + '.npz'
+        res = _get_data_from_file(args)
+        for d in range(1, 20):
+            args['train_size'] = tr // 20
+            args['valid_size'] = va // 20
+            args['test_size'] = te // 20
+            args['data_file'] = 'datasets/ocr_' + str(config.ocr_characters[d]) + '.npz'
+
+            tmp = _get_data_from_file(args)
+            res['train_data'] = np.concatenate([res['train_data'], tmp['train_data']], axis=0)
+            res['valid_data'] = np.concatenate([res['valid_data'], tmp['valid_data']], axis=0)
+            res['test_data'] = np.concatenate([res['test_data'], tmp['test_data']], axis=0)
+
+        np.random.shuffle(res['train_data'])
+        np.random.shuffle(res['valid_data'])
+        np.random.shuffle(res['test_data'])
+
+
+        #################### in baayad avaz beshe!!!
+        args['train_size'] = tr
+        args['valid_size'] = va
+        args['test_size'] = te
+
+        return res
     elif args['data_name'] == 'k_sparse':
         args['data_file'] = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
         return _get_data_from_file(args)
@@ -128,10 +160,13 @@ def get_data_structure():
                     adj[jj-config.width][jj] = adj[jj][jj-config.width] = 1
         parameters['adjacency_matrix'] = adj
         
-    elif config.data_name.startswith('mnist'):
-        graph_size = config.graph_size # 14 * 14
-        if config.data_name.startswith('mnistdps'):
-            dp = int(config.data_name[8:])
+    elif config.data_name.startswith('mnist') or config.data_name.startswith('ocr'):
+        graph_size = config.graph_size
+        if config.data_name.startswith('mnistdps') or config.data_name.startswith('ocrdps'):
+            if config.data_name.startswith('mnistdps'):
+                dp = int(config.data_name[8:])
+            else:
+                dp = int(config.data_name[6:])
             adj = np.zeros([graph_size, graph_size])
             for r in range(0, config.height):
                 for c in range(0, config.width):
@@ -143,8 +178,11 @@ def get_data_structure():
                                 zz = (r+t_r)*config.width + (c+t_c)
                                 adj[jj,zz] = adj[zz,jj] = 1
             parameters['adjacency_matrix'] = adj
-        elif config.data_name.startswith('mnistdp'):
-            dp = int(config.data_name[7:])
+        elif config.data_name.startswith('mnistdp') or config.data_name.startswith('ocrdp'):
+            if config.data_name.startswith('mnistdp'):
+                dp = int(config.data_name[7:])
+            else:
+                dp = int(config.data_name[5:])
             adj = np.zeros([graph_size, graph_size])
             for r in range(0, config.height):
                 for c in range(0, config.width):
@@ -179,3 +217,8 @@ def get_data_structure():
         with np.load('dataset_structures/BayesNet_' + str(config.n_of_BayesNet) + '_' + str(config.par_num_of_BayesNet) + '_structure.npz') as params:
             parameters['adjacency_matrix'] = params['adjacency_matrix']        
     return parameters
+
+data = get_data({'data_name' : 'ocr', 'train_size' : 200, 'valid_size' : 50, 'test_size': 5000})
+print(data['train_data'].shape[0])
+print(data['valid_data'].shape[0])
+print(data['test_data'].shape[0])

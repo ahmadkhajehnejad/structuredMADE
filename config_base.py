@@ -43,5 +43,15 @@ if data_name == 'k_sparse':
 if data_name == 'BayesNet':
     n_of_BayesNet = 100
     par_num_of_BayesNet = 5
-    graph_size = n_of_BayesNet    
+    graph_size = n_of_BayesNet
+
+# ocr
+if data_name.startswith('ocr'):
+    width = 8
+    height = 16
+    graph_size = width * height
+    ocr_characters = [0, 1, 2, 3, 4,  5, 6, 8, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 24, 25]
+    #ocr_num_character_samples = [4034, 1284, 2114, 1442, 4955,  921, 2472,  861, 4913,\
+    #                             189,  909, 3140, 1602, 5024, 3897, 1377,  341, 2673,\
+    #                             1394, 2136, 2562,  664, 520,  413, 1221, 1094]
 ##############
