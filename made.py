@@ -370,7 +370,7 @@ class MADE:
         return autoencoder
     
     def fit(self, train_data, validation_data):
-        early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=0, mode='auto', train_end_epochs = self.train_end_epochs)
+        early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto', train_end_epochs = self.train_end_epochs)
         
         train_size = train_data.shape[0]
         validation_size = validation_data.shape[0]
