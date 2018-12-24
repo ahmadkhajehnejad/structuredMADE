@@ -1,23 +1,26 @@
 
 use_multiprocessing = True
-num_of_all_masks = 1
+num_of_all_masks = 10
 num_of_hlayer = 2
 hlayer_size = 1200
-random_dimensions_order = 'grid_partial_random_4'
+random_dimensions_order = True
 direct_links = 'Full'
-algorithm = 'min_related'
-train_size = 100
-validation_size = 100
+algorithm = 'orig'
+train_size = 1000
+validation_size = 250
 test_size = 5000
-data_name = 'ocrdp1' # 'grid' # 'mnistdps8' # 'k_sparse'
+data_name = 'mnistdps4' # 'ocrdp1' # 'grid' # 'k_sparse'
 random_data = False
 from keras import optimizers
-
 
 ## General configs
 
 AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
 
+use_multiprocessing = True
+generate_samples = True
+generated_samples_dir = './generated_samples/'
+num_of_generated_samples_each_execution = 100
 num_of_exec = 1
 fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
@@ -66,4 +69,4 @@ if data_name.startswith('ocr'):
     # ocr_num_character_samples = [4034, 1284, 2114, 1442, 4955,  921, 2472,  861, 4913,\
     #                             189,  909, 3140, 1602, 5024, 3897, 1377,  341, 2673,\
     #                             1394, 2136, 2562,  664, 520,  413, 1221, 1094]
-##############    
+##############

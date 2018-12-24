@@ -3,9 +3,12 @@ from keras import optimizers
 
 ## General configs
 
-use_multiprocessing = False
+use_multiprocessing = True
 AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
 
+generate_samples = False
+num_of_generated_samples_each_execution = 100
+generated_samples_dir = './generated_samples/'
 num_of_exec = 5
 fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition

@@ -80,7 +80,7 @@ class MADE:
         if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related']) or (config.random_dimensions_order in ['bfs']):
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
-        made_utils.MDL_masks = self.generate_all_masks()
+        made_utils.MDL_masks, self.all_pi = self.generate_all_masks()
         self.all_masks = made_utils.MDL_masks
         
         self.autoencoder = self.build_autoencoder()
@@ -88,20 +88,39 @@ class MADE:
 
     def generate_all_masks(self):
         all_masks = []
-        if self.masking_method == 'Q_restricted':
-            for i_m in range(0,config.num_of_all_masks):                
-                all_masks.append(self._Q_restricted_mask())
-        elif self.masking_method == 'random_Q_restricted':
-            for i_m in range(0, config.num_of_all_masks):
-                all_masks.append(self._Q_restricted_mask(random_Q=True))
-        elif self.masking_method == 'ensemble_Q_restricted_and_orig':
-            for i_m in range(0, config.num_of_all_masks // 2):                
-                all_masks.append(self._Q_restricted_mask())
-            for i_m in range(config.num_of_all_masks // 2, config.num_of_all_masks):
-                all_masks.append(self._normal_mask('orig'))
-        else:
-            for i_m in range(0,config.num_of_all_masks):
-                all_masks.append(self._normal_mask(self.masking_method))
+        all_pi = []
+
+        for i_m in range(0,config.num_of_all_masks):
+
+            if config.random_dimensions_order == False:
+                pi = np.arange(config.graph_size)
+            elif config.random_dimensions_order == True:
+                pi = np.random.permutation(config.graph_size)
+            elif config.random_dimensions_order == 'grid':
+                pi = grid_orders.get_random_order(config.width, config.height)
+            elif config.random_dimensions_order == 'bfs':
+                pi = bfs_orders.get_random_order(self.adjacency_matrix)
+            elif config.random_dimensions_order.startswith('grid_partial_random'):
+                num_parts = int(config.random_dimensions_order[20:])
+                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, False)
+            elif config.random_dimensions_order.startswith('fixed_partial_random'):
+                num_parts = int(config.random_dimensions_order[21:])
+                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
+            else:
+                raise Exception('Error')
+            all_pi.append(pi)
+
+            if self.masking_method == 'Q_restricted':
+                all_masks.append(self._Q_restricted_mask(pi))
+            elif self.masking_method == 'random_Q_restricted':
+                all_masks.append(self._Q_restricted_mask(pi,random_Q=True))
+            elif self.masking_method == 'ensemble_Q_restricted_and_orig':
+                if i_m < config.num_of_all_masks // 2:
+                    all_masks.append(self._Q_restricted_mask(pi))
+                else:
+                    all_masks.append(self._normal_mask('orig',pi))
+            else:
+                all_masks.append(self._normal_mask(self.masking_method,pi))
         
         
         swapped_all_masks = []
@@ -112,31 +131,12 @@ class MADE:
             swapped_all_masks.append(swapped_masks)
             
         #all_masks = [[x*1.0 for x in y] for y in all_masks]
-        return swapped_all_masks
+        return swapped_all_masks, all_pi
 
-    def _Q_restricted_mask(self, random_Q=False):
+    def _Q_restricted_mask(self, pi, random_Q=False):
         ### We can change it
         mu = [(i+1)/(config.num_of_hlayer+1) for i in range(config.num_of_hlayer)]
-    
-        
-        
-        if config.random_dimensions_order == False:
-            pi = np.arange(config.graph_size)
-        elif config.random_dimensions_order == True:
-            pi = np.random.permutation(config.graph_size)
-        elif config.random_dimensions_order == 'grid':
-            pi = grid_orders.get_random_order(config.width, config.height)
-        elif config.random_dimensions_order == 'bfs':
-            pi = bfs_orders.get_random_order(self.adjacency_matrix)
-        elif config.random_dimensions_order.startswith('grid_partial_random'):
-            num_parts = int(config.random_dimensions_order[20:])
-            pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, False)
-        elif config.random_dimensions_order.startswith('fixed_partial_random'):
-            num_parts = int(config.random_dimensions_order[21:])
-            pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
-        else:
-            raise Exception('Error')
-        
+
         Q = _make_Q(self.adjacency_matrix, pi)
 
         if random_Q:
@@ -246,7 +246,7 @@ class MADE:
         #print('-- ' + str(cnt_masks))
         return masks
 
-    def _normal_mask(self, masking_method):
+    def _normal_mask(self, masking_method, pi):
         #generating subsets as 3d matrix 
         #subsets = np.random.randint(0, 2, (num_of_hlayer, hlayer_size, graph_size))
         labels = np.zeros([config.num_of_hlayer, config.hlayer_size], dtype=int)
@@ -258,40 +258,7 @@ class MADE:
         #masks = np.zeros([num_of_hlayer,hlayer_size,hlayer_size])
         
         masks = []
-        if masking_method == 'orig':
-            if config.random_dimensions_order == False:
-                pi = np.arange(config.graph_size)
-            elif config.random_dimensions_order == True:
-                pi = np.random.permutation(config.graph_size)
-            elif config.random_dimensions_order == 'grid':
-                pi = grid_orders.get_random_order(config.width, config.height)
-            elif config.random_dimensions_order == 'bfs':
-                pi = bfs_orders.get_random_order(self.adjacency_matrix)
-            elif config.random_dimensions_order.startswith('grid_partial_random'):
-                num_parts = int(config.random_dimensions_order[20:])
-                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, False)
-            elif config.random_dimensions_order.startswith('fixed_partial_random'):
-                num_parts = int(config.random_dimensions_order[21:])
-                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
-            else:
-                raise Exception('Error' + str(config.random_dimensions_order))
-        elif masking_method == 'min_related':
-            if config.random_dimensions_order == False:
-                pi = np.arange(config.graph_size)
-            elif config.random_dimensions_order == True:
-                pi = np.random.permutation(config.graph_size)
-            elif config.random_dimensions_order == 'grid':
-                pi = grid_orders.get_random_order(config.width, config.height)
-            elif config.random_dimensions_order == 'bfs':
-                pi = bfs_orders.get_random_order(self.adjacency_matrix)
-            elif config.random_dimensions_order.startswith('grid_partial_random'):
-                num_parts = int(config.random_dimensions_order[20:])
-                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, False)
-            elif config.random_dimensions_order.startswith('fixed_partial_random'):
-                num_parts = int(config.random_dimensions_order[21:])
-                pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
-            else:
-                raise Exception('Error' + str(config.random_dimensions_order))
+        if masking_method == 'min_related':
             Q = _make_Q(self.adjacency_matrix, pi)
             min_related_pi = np.zeros([config.graph_size])
             for i in range(len(Q)):
@@ -303,7 +270,7 @@ class MADE:
             for i in reversed(range(config.graph_size-1)):
                 min_related_pi[i] = min(min_related_pi[i], min_related_pi[i+1])
             #related_size = pi - min_related_pi
-        else:
+        elif masking_method != 'orig':
             raise Exception('Error')
 
         #first layer mask
@@ -403,7 +370,7 @@ class MADE:
         return autoencoder
     
     def fit(self, train_data, validation_data):
-        early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto', train_end_epochs = self.train_end_epochs)
+        early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=0, mode='auto', train_end_epochs = self.train_end_epochs)
         
         train_size = train_data.shape[0]
         validation_size = validation_data.shape[0]
@@ -441,3 +408,13 @@ class MADE:
         #res = log_sum_exp(log_probs, axis=0) - np.log(config.num_of_all_masks)            
         res = np.log(np.mean(probs, axis=0))
         return res
+
+    def generate(self, n):
+        mask_index = np.random.randint(0,config.num_of_all_masks,n)
+        generated_samples = np.zeros([n,config.graph_size])
+        all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
+        for i in range(config.graph_size):
+            ind = (all_pi_nparray[mask_index,:] == i)
+            mu = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])[ind]
+            generated_samples[ind] = np.array(np.random.rand(n) < mu, dtype=np.float32)
+        return generated_samples

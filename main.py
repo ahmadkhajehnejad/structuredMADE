@@ -4,7 +4,8 @@ import numpy as np
 from dataset import get_data
 import config
 from made import MADE
-import sys    
+import sys
+from PIL import Image
 
 import tensorflow as tf
 from keras import backend as K
@@ -60,6 +61,13 @@ def execute_one_round():
     sys.stderr.flush()
     res['train_end_epochs'] = model.train_end_epochs
     res['num_of_connections'] = model.num_of_connections()
+
+    if config.generate_samples:
+        n = config.num_of_generated_samples_each_execution
+        generated_samples = model.generate(n).reshape(n, config.height, config.width)
+        for i in range(n):
+            im = Image.fromarray(generated_samples[i,:,:])
+            im.save(config.generated_samples_dir+str(i)+'.png')
     return res
     
     
