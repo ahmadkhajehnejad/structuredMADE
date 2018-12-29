@@ -7,13 +7,11 @@ import numpy as np
 import warnings
 
 
-MDL_masks = []
-
 class MaskedDenseLayer(Layer):
-    def __init__(self, output_dim, mask_index ,activation, **kwargs):
+    def __init__(self, output_dim, masks ,activation, **kwargs):
         self.output_dim = output_dim
         super(MaskedDenseLayer, self).__init__(**kwargs)
-        self._mask_index = mask_index
+        self._mask = masks
         self._activation = activations.get(activation)
     def build(self, input_shape):
         # Create a trainable weight variable for this layer.
@@ -31,7 +29,7 @@ class MaskedDenseLayer(Layer):
         bs = K.shape(self.x)[0]
         ks = K.shape(self.kernel)
 
-        tmp_mask = tf.gather(tf.constant(np.array(MDL_masks[self._mask_index])), K.reshape(self._state,[-1]))
+        tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(self._state,[-1]))
         masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
         self._output = tf.matmul(K.reshape(self.x,[bs,1,ks[0]]), masked)
         return self._activation(K.reshape(self._output,[bs,self.output_dim]))
