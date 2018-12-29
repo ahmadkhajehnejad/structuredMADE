@@ -388,7 +388,7 @@ class MADE:
                                   validation_data=([reped_validdata, reped_state_valid],
                                                     [reped_validdata]),
                                   callbacks=[early_stop],
-                                  verbose=1)
+                                  verbose=0)
     def predict(self, test_data):
         test_size = test_data.shape[0]
         probs = np.zeros([config.num_of_all_masks, test_size])

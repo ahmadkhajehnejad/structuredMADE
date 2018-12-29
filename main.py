@@ -48,7 +48,17 @@ def execute_one_round():
     
     data = get_data(args)
 
+    print('data loaded')
+
+    # if config.generate_samples:
+    #     n = len(data['train_data'])
+    #     for i in range(n):
+    #         im = Image.fromarray(255*data['train_data'][i,:].reshape([config.height, config.width]))
+    #         im.convert('RGB').save(config.generated_samples_dir+'train_' + str(i)+'.png')
+
     model = MADE()
+
+    print('model initiated')
     
     model.fit(data['train_data'], data['valid_data'])
         
@@ -66,8 +76,8 @@ def execute_one_round():
         n = config.num_of_generated_samples_each_execution
         generated_samples = model.generate(n).reshape(n, config.height, config.width)
         for i in range(n):
-            im = Image.fromarray(generated_samples[i,:,:])
-            im.save(config.generated_samples_dir+str(i)+'.png')
+            im = Image.fromarray(255*generated_samples[i,:,:])
+            im.convert('RGB').save(config.generated_samples_dir+str(i)+'.png')
     return res
     
     
