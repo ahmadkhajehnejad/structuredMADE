@@ -23,19 +23,93 @@ class MaskedDenseLayer(Layer):
         super(MaskedDenseLayer, self).build(input_shape)  # Be sure to call this somewhere!
     
     def call(self, l):
-        self.x = l[0]
-        self._state = l[1]
+        x = l[0]
+        state = l[1]
 
-        bs = K.shape(self.x)[0]
+        bs = K.shape(x)[0]
         ks = K.shape(self.kernel)
 
-        tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(self._state,[-1]))
+        tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(state,[-1]))
         masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
-        self._output = tf.matmul(K.reshape(self.x,[bs,1,ks[0]]), masked)
-        return self._activation(K.reshape(self._output,[bs,self.output_dim]))
+        output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
+        return self._activation(K.reshape(output,[bs,self.output_dim]))
   
     def compute_output_shape(self, input_shape):
         return (input_shape[0][0], self.output_dim)
+
+
+class MaskedDenseLayerMultiMasks(Layer):
+    def __init__(self, output_dim, masks, activation, **kwargs):
+        self.output_dim = output_dim
+        super(MaskedDenseLayerMultiMasks, self).__init__(**kwargs)
+        self._masks = masks
+        self._activation = activations.get(activation)
+        self.num_masks = self._masks.shape[0]
+
+    def build(self, input_shape):
+        # Create a trainable weight variable for this layer.
+
+        self.kernel = self.add_weight(name='kernel',
+                                      shape=(input_shape[2], self.output_dim),
+                                      initializer='glorot_uniform',
+                                      trainable=True,
+                                      dtype="float32")
+        super(MaskedDenseLayerMultiMasks, self).build(input_shape)  # Be sure to call this somewhere!
+
+    def call(self, x):
+
+        bs = K.shape(x)[-3]
+        ks = K.shape(self.kernel)
+
+        #print_node = tf.Print(bs, [tf.constant(1111), bs])
+
+        masked = K.tile(\
+            K.reshape(\
+                tf.multiply(\
+                    K.tile(K.reshape(self.kernel, [1, ks[0], ks[1]]),\
+                           [self.num_masks, 1, 1]\
+                           ), self._masks\
+                    ), [1, self.num_masks, ks[0], ks[1]]),
+            [bs, 1, 1, 1])
+            #[print_node, 1, 1, 1])
+        output = tf.matmul(K.reshape(x, [bs, self.num_masks, 1, ks[0]]), masked)
+
+
+        return self._activation(K.reshape(output, [bs, self.num_masks, self.output_dim]))
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], self.num_masks, self.output_dim)
+
+
+class LikelihoodConvexCombinationLayer(Layer):
+    def __init__(self, num_models, **kwargs):
+        super(LikelihoodConvexCombinationLayer, self).__init__(**kwargs)
+        self.num_models = num_models
+
+    def build(self, input_shape):
+        # Create a trainable weight variable for this layer.
+        self.alpha = self.add_weight(name='alpha',
+                                      shape=(self.num_models,),
+                                      initializer='Zeros',
+                                      trainable=True,
+                                      dtype="float32")
+        super(LikelihoodConvexCombinationLayer, self).build(input_shape)  # Be sure to call this somewhere!
+
+    def call(self, input):
+        y, x = input
+
+        bs = K.shape(y)[0]
+
+        likelihoods = K.prod(tf.multiply(tf.pow(y,x), tf.pow(1-y, 1-x)), axis=2)
+        exp_alpha = K.reshape(K.exp(self.alpha), [self.num_models, 1])
+        return tf.reshape(tf.matmul(likelihoods, exp_alpha), [bs, 1]) / K.sum(exp_alpha)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0][0], 1)
+
+
+def negative_log_likelihood_loss(y_true, y_pred):
+    return -K.mean(K.log(y_pred))
 
 
 class MyEarlyStopping(Callback):
