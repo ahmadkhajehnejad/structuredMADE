@@ -407,8 +407,6 @@ class MADE:
                                                        np.zeros((validation_data.shape[0],1))),
                                       callbacks=[early_stop],
                                       verbose=0)
-                if i < config.fit_iter - 1:
-                    self.autoencoder.optimizer.lr.set_value(self.autoencoder.optimizer.lr.get_value() * 0.1)
 
             #alpha = np.exp(K.eval(self.autoencoder._layers[-1]._trainable_weights[0]))
             alpha = np.exp(self.autoencoder.get_layer(index=-1).get_weights()[0])
