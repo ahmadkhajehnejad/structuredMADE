@@ -429,7 +429,7 @@ class MADE:
                                       validation_data=([reped_validdata, reped_state_valid],
                                                         [reped_validdata]),
                                       callbacks=[early_stop],
-                                      verbose=1)
+                                      verbose=0)
 
     def predict(self, test_data):
         if config.learn_alpha:
