@@ -395,6 +395,7 @@ class MADE:
 
         early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto',
                                      train_end_epochs=self.train_end_epochs)
+
         if config.learn_alpha:
             for i in range(0, config.fit_iter):
                 self.autoencoder.fit(x=np.tile( train_data.reshape([-1, 1, config.graph_size]), [1, config.num_of_all_masks, 1]).reshape([-1, config.num_of_all_masks*config.graph_size]),\
@@ -407,7 +408,8 @@ class MADE:
                                       callbacks=[early_stop],
                                       verbose=1)
 
-            alpha = np.exp(K.eval(self.autoencoder._layers[-1]._trainable_weights[0]))
+            #alpha = np.exp(K.eval(self.autoencoder._layers[-1]._trainable_weights[0]))
+            alpha = np.exp(self.autoencoder.get_layer(index=-1).get_weights()[0])
             print('alpha: ', alpha/np.sum(alpha))
 
         else:
