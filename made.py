@@ -82,8 +82,11 @@ class MADE:
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
         self.all_masks,_ = self.generate_all_masks()
-        
-        self.autoencoder = self.build_autoencoder()
+
+        if config.learn_alpha:
+            self.autoencoder, self.autoencoder_2 = self.build_autoencoder()
+        else:
+            self.autoencoder = self.build_autoencoder()
         self.train_end_epochs = []
 
     def generate_all_masks(self):
@@ -350,7 +353,8 @@ class MADE:
                 cnt += np.sum(mask)
         return cnt
 
-    def build_autoencoder(self):
+    '''
+    def build_autoencoder_old(self):
 
         if config.learn_alpha:
 
@@ -390,8 +394,63 @@ class MADE:
 
             autoencoder.compile(optimizer=config.optimizer, loss='binary_crossentropy')
         return autoencoder
-    
-    def fit(self, train_data, validation_data):
+    '''
+
+    def build_autoencoder(self):
+
+        input_layer = Input(shape=(config.graph_size,))
+        state = Input(shape=(1,), dtype="int32")
+
+        hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')( [input_layer, state] )
+        for i in range(1,config.num_of_hlayer):
+            hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')( [hlayer, state] )
+        if config.direct_links:
+            clayer = Concatenate()([hlayer, input_layer])
+            output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer, state] )
+        else:
+            output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [hlayer, state] )
+        autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
+
+        autoencoder.compile(optimizer=config.optimizer, loss='binary_crossentropy')
+
+        if config.learn_alpha:
+
+            input_layer_2 = Input(shape=(config.num_of_all_masks * config.graph_size,))
+
+
+            reshape_layer_2 = Reshape(target_shape=(config.num_of_all_masks, config.graph_size))(input_layer_2)
+
+            hlayer_2 = MaskedDenseLayerMultiMasks(config.hlayer_size, np.array(self.all_masks[0]), 'relu')([reshape_layer_2])
+            for i in range(1, config.num_of_hlayer):
+                hlayer_2 = MaskedDenseLayerMultiMasks(config.hlayer_size, np.array(self.all_masks[i]), 'relu')([hlayer_2])
+            if config.direct_links:
+                clayer_2 = Concatenate()([hlayer_2, reshape_layer_2])
+                pre_output_layer_2 = MaskedDenseLayerMultiMasks(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')([clayer_2])
+            else:
+                pre_output_layer_2 = MaskedDenseLayerMultiMasks(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')([hlayer_2])
+
+            output_layer_2 = LikelihoodConvexCombinationLayer(config.num_of_all_masks)([pre_output_layer_2, reshape_layer_2])
+            autoencoder_2 = Model(inputs=[input_layer_2], outputs=[output_layer_2])
+
+            autoencoder_2.compile(optimizer=config.optimizer, loss=negative_log_likelihood_loss)
+
+            '''
+            for l in range(config.num_of_hlayer + 4):
+                print(l, autoencoder.get_layer(index=l))
+
+            print()
+
+            for l in range(config.num_of_hlayer + 5):
+                print(l, autoencoder_2.get_layer(index=l))
+            '''
+
+            return autoencoder, autoencoder_2
+
+        else:
+            return autoencoder
+
+    '''
+    def fit_old(self, train_data, validation_data):
 
         early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto',
                                      train_end_epochs=self.train_end_epochs)
@@ -430,10 +489,61 @@ class MADE:
                                                         [reped_validdata]),
                                       callbacks=[early_stop],
                                       verbose=0)
+    '''
+
+    def fit(self, train_data, validation_data):
+
+        early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto',
+                                     train_end_epochs=self.train_end_epochs)
+
+        train_size = train_data.shape[0]
+        validation_size = validation_data.shape[0]
+        reped_state_train = (np.arange(train_size*config.num_of_all_masks)/train_size).astype(np.int32)
+        reped_state_valid = (np.arange(validation_size*config.num_of_all_masks)/validation_size).astype(np.int32)
+        reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
+        reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
+
+        for i in range(0, config.fit_iter):
+            self.autoencoder.fit(x=[reped_traindata, reped_state_train],
+                                 y=[reped_traindata],
+                                 epochs=config.num_of_epochs,
+                                 batch_size=config.batch_size,
+                                 shuffle=True,
+                                 validation_data=([reped_validdata, reped_state_valid],
+                                                  [reped_validdata]),
+                                 callbacks=[early_stop],
+                                 verbose=0)
+
+        if config.learn_alpha:
+
+            for l in range(config.num_of_hlayer):
+                self.autoencoder_2.get_layer(index=l+2).set_weights(self.autoencoder.get_layer(index=l+2).get_weights())
+
+            self.autoencoder_2.get_layer(index=config.num_of_hlayer + 3).set_weights(
+                self.autoencoder.get_layer(index=config.num_of_hlayer + 3).get_weights())
+
+
+            for i in range(0, config.fit_iter):
+                self.autoencoder_2.fit(x=np.tile( train_data.reshape([-1, 1, config.graph_size]), [1, config.num_of_all_masks, 1]).reshape([-1, config.num_of_all_masks*config.graph_size]),
+                                       y=np.zeros((train_data.shape[0], 1)),
+                                       epochs=config.num_of_epochs,
+                                       batch_size=config.batch_size,
+                                       shuffle=True,
+                                       validation_data=(np.tile(validation_data.reshape([-1, 1, config.graph_size]), [1, config.num_of_all_masks, 1]).reshape([-1, config.num_of_all_masks*config.graph_size]), \
+                                                        np.zeros((validation_data.shape[0],1))),
+                                       callbacks=[early_stop],
+                                       verbose=0)
+
+
+            #alpha = np.exp(K.eval(self.autoencoder._layers[-1]._trainable_weights[0]))
+            alpha = np.exp(self.autoencoder.get_layer(index=-1).get_weights()[0])
+            print('alpha: ', alpha/np.sum(alpha))
+
+
 
     def predict(self, test_data):
         if config.learn_alpha:
-            probs = self.autoencoder.predict(np.tile(test_data.reshape([-1,1,config.graph_size]), [1,config.num_of_all_masks,1]).reshape([-1, config.num_of_all_masks*config.graph_size]))
+            probs = self.autoencoder_2.predict(np.tile(test_data.reshape([-1,1,config.graph_size]), [1,config.num_of_all_masks,1]).reshape([-1, config.num_of_all_masks*config.graph_size]))
             res = np.log(probs)
         else:
             test_size = test_data.shape[0]
