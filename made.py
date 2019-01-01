@@ -535,8 +535,8 @@ class MADE:
                                        verbose=0)
 
 
-            #alpha = np.exp(K.eval(self.autoencoder._layers[-1]._trainable_weights[0]))
-            alpha = np.exp(self.autoencoder.get_layer(index=-1).get_weights()[0])
+            #alpha = np.exp(K.eval(self.autoencoder_2._layers[-1]._trainable_weights[0]))
+            alpha = np.exp(self.autoencoder_2.get_layer(index=-1).get_weights()[0])
             print('alpha: ', alpha/np.sum(alpha))
 
 
