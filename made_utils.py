@@ -52,17 +52,23 @@ class MaskedDenseLayerMultiMasks(Layer):
         self.kernel = self.add_weight(name='kernel',
                                       shape=(input_shape[2], self.output_dim),
                                       initializer='glorot_uniform',
-                                      trainable=True,
+                                      trainable=False,
                                       dtype="float32")
+
+        self.masked_kernel = tf.multiply(
+            K.tile(K.reshape(self.kernel, [1, input_shape[2], self.output_dim]),
+                   [self.num_masks, 1, 1]
+                   ), self._masks
+        )
         super(MaskedDenseLayerMultiMasks, self).build(input_shape)  # Be sure to call this somewhere!
 
     def call(self, x):
 
-        bs = K.shape(x)[-3]
-        ks = K.shape(self.kernel)
+        #bs = K.shape(x)[-3]
 
         #print_node = tf.Print(bs, [tf.constant(1111), bs])
 
+        '''
         masked = K.tile(\
             K.reshape(\
                 tf.multiply(\
@@ -73,9 +79,17 @@ class MaskedDenseLayerMultiMasks(Layer):
             [bs, 1, 1, 1])
             #[print_node, 1, 1, 1])
         output = tf.matmul(K.reshape(x, [bs, self.num_masks, 1, ks[0]]), masked)
-
-
         return self._activation(K.reshape(output, [bs, self.num_masks, self.output_dim]))
+        '''
+
+        output = tf.scan(self._masked_transform, x, initializer=tf.zeros([self.num_masks, K.shape(self.kernel)[1]]))
+
+        return output
+
+    def _masked_transform(self, _nothing, x):
+        ks = K.shape(self.kernel)
+        return K.reshape(tf.matmul(K.reshape(x, [self.num_masks, 1, ks[0]]), self.masked_kernel), [self.num_masks, ks[1]])
+
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0], self.num_masks, self.output_dim)
