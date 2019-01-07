@@ -78,10 +78,14 @@ def _detect_subsets(labels_1, labels_2):
 class MADE:
     def __init__(self):
         self.masking_method = config.algorithm
-        if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related']) or (config.random_dimensions_order in ['bfs']):
+        if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related']) or \
+                (config.random_dimensions_order in ['bfs']) or \
+                (config.random_dimensions_order.endswith('bfs-random')):
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
         self.all_masks,_ = self.generate_all_masks()
+
+        #print('avg reaching sizes: ', np.mean(self.reaching_dimesions_num()))
 
         if config.learn_alpha:
             self.autoencoder, self.autoencoder_2 = self.build_autoencoder()
@@ -109,6 +113,16 @@ class MADE:
             elif config.random_dimensions_order.startswith('fixed_partial_random'):
                 num_parts = int(config.random_dimensions_order[21:])
                 pi = grid_orders.get_partially_random_order(config.width, config.height, num_parts, True)
+            elif config.random_dimensions_order.endswith('grid-random'):
+                if i_m < int(config.random_dimensions_order[:-11]):
+                    pi = grid_orders.get_random_order(config.width, config.height)
+                else:
+                    pi = np.random.permutation(config.graph_size)
+            elif config.random_dimensions_order.endswith('bfs-random'):
+                if i_m < int(config.random_dimensions_order[:-10]):
+                    pi = bfs_orders.get_random_order(self.adjacency_matrix)
+                else:
+                    pi = np.random.permutation(config.graph_size)
             else:
                 raise Exception('Error')
             all_pi.append(pi)
@@ -576,3 +590,30 @@ class MADE:
             mu = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])[ind]
             generated_samples[ind] = np.array(np.random.rand(n) < mu, dtype=np.float32)
         return generated_samples
+
+
+
+    def reaching_dimesions_num(self):
+        results = np.zeros([config.num_of_all_masks, config.graph_size])
+        for mask_i in range(config.num_of_all_masks):
+            for i in range(config.graph_size):
+                #print(mask_i, i)
+                mark = np.zeros([config.num_of_hlayer+2, config.hlayer_size])
+                mark[config.num_of_hlayer+1, i] = 1
+                results[mask_i, i] = len(self._get_reaching_dimensions(i, config.num_of_hlayer+1, mark, mask_i))
+        return results
+
+    def _get_reaching_dimensions(self, i, l, mark, mask_i):
+        mark[l, i] = 1
+        if l == 0:
+            return [i]
+        result = []
+        adj = self.all_masks[l-1][mask_i]
+        k = adj.shape[0]
+        if k > config.hlayer_size:
+            k = config.hlayer_size
+            adj = adj[:k, :]
+        for j in range(k):
+            if mark[l-1, j] == 0 and adj[j, i] == 1:
+                result = result + self._get_reaching_dimensions(j, l-1, mark, mask_i)
+        return result
