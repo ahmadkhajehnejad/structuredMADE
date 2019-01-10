@@ -564,6 +564,8 @@ class MADE:
             amx = np.argmax(predicted_probs, axis=1)
             for s in range(config.num_of_all_masks):
                 self.alpha[s] = np.sum(amx == s)
+            self.alpha = (self.alpha + 1) / np.sum(self.alpha + 1)
+            print('alpha: ', self.alpha)
 
     def predict(self, test_data):
         if config.learn_alpha == True:
@@ -586,8 +588,7 @@ class MADE:
                 probs[j][:] = made_prob
 
             if config.learn_alpha == 'heuristic':
-                alpha = ((self.alpha + 1) / np.sum(self.alpha + 1)).reshape([1,-1])
-                res = np.log(np.matmul(alpha, probs)).reshape([-1])
+                res = np.log(np.matmul(self.alpha.reshape([1,-1]), probs)).reshape([-1])
             else:
                 #res = log_sum_exp(log_probs, axis=0) - np.log(config.num_of_all_masks)
                 res = np.log(np.mean(probs, axis=0))
