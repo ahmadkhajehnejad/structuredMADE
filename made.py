@@ -87,10 +87,12 @@ class MADE:
 
         #print('avg reaching sizes: ', np.mean(self.reaching_dimesions_num()))
 
-        if config.learn_alpha:
+        if config.learn_alpha == True:
             self.autoencoder, self.autoencoder_2 = self.build_autoencoder()
         else:
             self.autoencoder = self.build_autoencoder()
+            if config.learn_alpha == 'heuristic':
+                self.alpha = None
         self.train_end_epochs = []
 
     def generate_all_masks(self):
@@ -427,7 +429,7 @@ class MADE:
 
         autoencoder.compile(optimizer=config.optimizer, loss='binary_crossentropy')
 
-        if config.learn_alpha:
+        if config.learn_alpha == True:
 
             input_layer_2 = Input(shape=(config.num_of_all_masks * config.graph_size,))
 
@@ -528,7 +530,7 @@ class MADE:
                                  callbacks=[early_stop],
                                  verbose=0)
 
-        if config.learn_alpha:
+        if config.learn_alpha == True:
 
             for l in range(config.num_of_hlayer):
                 self.autoencoder_2.get_layer(index=l+2).set_weights(self.autoencoder.get_layer(index=l+2).get_weights())
@@ -552,11 +554,19 @@ class MADE:
             #alpha = np.exp(K.eval(self.autoencoder_2._layers[-1]._trainable_weights[0]))
             alpha = np.exp(self.autoencoder_2.get_layer(index=-1).get_weights()[0])
             print('alpha: ', alpha/np.sum(alpha))
-
-
+        elif config.learn_alpha == 'heuristic':
+            _x = np.concatenate([train_data, validation_data], axis=0)
+            _n = train_size + validation_size
+            predicted_probs = np.zeros([_n, config.num_of_all_masks])
+            for s in range(config.num_of_all_masks):
+                _y = self.autoencoder.predict(x=[_x, s*np.ones([_n,1])])
+                predicted_probs[:, s] = np.prod(np.multiply(np.power(_y, _y), np.power(1- _y, 1- _x)), axis=1)
+            amx = np.argmax(predicted_probs, axis=1)
+            for s in range(config.num_of_all_masks):
+                self.alpha[s] = np.sum(amx == s)
 
     def predict(self, test_data):
-        if config.learn_alpha:
+        if config.learn_alpha == True:
             probs = self.autoencoder_2.predict(np.tile(test_data.reshape([-1,1,config.graph_size]), [1,config.num_of_all_masks,1]).reshape([-1, config.num_of_all_masks*config.graph_size]))
             res = np.log(probs)
         else:
@@ -575,12 +585,16 @@ class MADE:
                 made_prob = np.prod(corrected_probs, 1)
                 probs[j][:] = made_prob
 
-            #res = log_sum_exp(log_probs, axis=0) - np.log(config.num_of_all_masks)
-            res = np.log(np.mean(probs, axis=0))
+            if config.learn_alpha == 'heuristic':
+                alpha = ((self.alpha + 1) / np.sum(self.alpha + 1)).reshape([1,-1])
+                res = np.log(np.matmul(alpha, probs)).reshape([-1])
+            else:
+                #res = log_sum_exp(log_probs, axis=0) - np.log(config.num_of_all_masks)
+                res = np.log(np.mean(probs, axis=0))
         return res
 
     def generate(self, n):
-        if config.learn_alpha:
+        if config.learn_alpha != False:
             raise Exception('Not implemented')
         mask_index = np.random.randint(0,config.num_of_all_masks,n)
         generated_samples = np.zeros([n,config.graph_size])
