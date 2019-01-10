@@ -92,7 +92,7 @@ class MADE:
         else:
             self.autoencoder = self.build_autoencoder()
             if config.learn_alpha == 'heuristic':
-                self.alpha = None
+                self.alpha = np.zeros([config.num_of_all_masks])
         self.train_end_epochs = []
 
     def generate_all_masks(self):
