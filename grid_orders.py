@@ -41,14 +41,40 @@ def get_random_order(width, height):
         a = (inverse_i + _j) * M + inverse_i
     else:
         print("Wrong value for t in grid_orders.get_random_order!")
-        
+
+
+
     ind = np.argsort(a.reshape([-1]))
     pi = np.zeros([height*width], dtype=np.int)
     pi[ind] = np.arange(height*width, dtype=np.int)
-    #print(t,':')
-    #print(pi.reshape([height, width]))
     return pi
 
+
+def get_random_order_from_center(width, height):
+    a = get_random_order(width, height)
+
+    i_c = np.random.randint(int(height//3), height - int(height//3))
+    j_c = np.random.randint(int(width//3), width - int(width//3))
+    k = a.reshape([height, width])[i_c, j_c]
+
+    ind_1 = a < k
+    ind_2 = a >= k
+    pi_1 = a[ind_1]
+    pi_2 = a[ind_2]
+    if (np.random.rand() > 0.5):
+        pi_1 = (k - pi_1) * 2
+        pi_2 = (pi_2 - k) * 2 - 1
+        pi_2[pi_2 == -1] = 0
+    else:
+        pi_2 = (pi_2 - k) * 2
+        pi_1 = (k - pi_1) * 2 - 1
+    a[ind_1] = pi_1
+    a[ind_2] = pi_2
+
+    ind = np.argsort(a.reshape([-1]))
+    pi = np.zeros([height * width], dtype=np.int)
+    pi[ind] = np.arange(height*width, dtype=np.int)
+    return pi
 
 
 def _get_partially_permuted(pi, num_parts):
@@ -70,4 +96,3 @@ def get_partially_random_order(width, height, num_parts, initial_fixed_order=Fal
     else:
         pi = get_random_order(width, height)
     return _get_partially_permuted(pi, num_parts)
-    

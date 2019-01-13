@@ -125,6 +125,8 @@ class MADE:
                     pi = bfs_orders.get_random_order(self.adjacency_matrix)
                 else:
                     pi = np.random.permutation(config.graph_size)
+            elif config.random_dimensions_order == 'grid_from_center':
+                pi = grid_orders.get_random_order_from_center(config.width, config.height)
             else:
                 raise Exception('Error')
             all_pi.append(pi)
