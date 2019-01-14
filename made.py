@@ -80,7 +80,7 @@ class MADE:
         self.masking_method = config.algorithm
         if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related']) or \
                 (config.random_dimensions_order in ['bfs']) or \
-                (config.random_dimensions_order.endswith('bfs-random')):
+                (str(config.random_dimensions_order).endswith('bfs-random')):
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
         self.all_masks,_ = self.generate_all_masks()
