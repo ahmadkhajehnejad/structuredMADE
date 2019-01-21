@@ -5,6 +5,7 @@ import keras.activations as activations
 import tensorflow as tf
 import numpy as np
 import warnings
+import config
 
 
 class MaskedDenseLayer(Layer):
@@ -138,6 +139,7 @@ class MyEarlyStopping(Callback):
         self.wait = 0
         self.stopped_epoch = 0
         self.train_end_epochs = train_end_epochs
+        self.best_weights = None
 
         if mode not in ['auto', 'min', 'max']:
             warnings.warn('EarlyStopping mode %s is unknown, '
@@ -178,6 +180,8 @@ class MyEarlyStopping(Callback):
         if self.monitor_op(current - self.min_delta, self.best):
             self.best = current
             self.wait = 0
+            if config.use_best_validated_weights:
+                self.best_weights = self.model.get_weights()
         else:
             self.wait += 1
             if self.wait >= self.patience:
@@ -186,6 +190,8 @@ class MyEarlyStopping(Callback):
 
     def on_train_end(self, logs=None):
         self.train_end_epochs.append(self.stopped_epoch)
+        if config.use_best_validated_weights:
+            self.model.set_weights(self.best_weights)
         if self.stopped_epoch > 0 and self.verbose > 0:
             print('Epoch %05d: early stopping' % (self.stopped_epoch + 1))
 
