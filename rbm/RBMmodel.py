@@ -75,9 +75,15 @@ class RBM:
             if current_val_LL > best_val_LL:
                 best_val_LL = current_val_LL
                 cnt_improved_LL = 0
+                best_attributes = {'components_': self.rbm_model.components_,
+                                   'intercept_visible_': self.rbm_model.intercept_visible_,
+                                   'intercept_hidden': self.rbm_model.intercept_hidden_}
             else:
                 cnt_improved_LL += 1
             if cnt_improved_LL >= config.patience:
+                self.rbm_model.components_ = best_attributes['components_']
+                self.rbm_model.intercept_visible_ = best_attributes['intercept_visible_']
+                self.rbm_model.intercept_hidden_ = best_attributes['intercept_hidden']
                 break
         print('fit finish')
         sys.stdout.flush()
