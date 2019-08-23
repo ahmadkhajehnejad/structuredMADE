@@ -1,8 +1,8 @@
 
 import time
 import numpy as np
-from dataset import get_data
-from rbm import config as config
+from mixture_multivariateBernoulli.dataset import get_data
+from mixture_multivariateBernoulli import config as config
 import sys
 from PIL import Image
 from mixture_multivariateBernoulli.MMBmodel import  MMB

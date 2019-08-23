@@ -7,10 +7,10 @@ hlayer_size = 100
 random_dimensions_order = True
 direct_links = 'Full'
 algorithm = 'orig'
-train_size = 1000
-validation_size = 250
+train_size = 300
+validation_size = 75
 test_size = 5000
-data_name = 'grid' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
+data_name = 'mnist' # 'grid' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
 learn_alpha = True
 random_data = False
 from keras import optimizers

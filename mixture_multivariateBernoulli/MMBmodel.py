@@ -8,9 +8,13 @@ class MMB:
 
     def _compute_gamma(self, x):
         n = x.shape[0]
-        b = np.tile(self.mu.reshape([1,-1]), [n,1])
-        gamma = np.tile(self.pi.reshape([1,-1]), [n,1]) *
-        return gamma
+        log_gamma = np.zeros([n,config.num_components])
+        for j in range(config.num_components):
+            tmp = (x * np.tile(np.log(self.mu[j, :]).reshape([1,-1]), [n, 1]) ) * \
+                  ((1-x) * np.tile(np.log(1 - self.mu[j,:]).reshape([1,-1]), [n, 1]))
+            log_gamma[:,j] = np.sum( np.log(self.pi[j]) + tmp, axis=1)
+        log_gamma = log_gamma - np.tile( logsumexp(log_gamma, axis=1).reshape([n,1]), [1,config.num_components])
+        return np.exp(log_gamma)
 
     def _EM_step(self, x):
         gamma = self._compute_gamma(x)
@@ -29,6 +33,7 @@ class MMB:
         self.mu = self.mu / np.sum(self.mu, axis=1).reshape([-1,1])
 
         for iter in range(config.num_EMiters):
+            print(' EM iter: ', iter)
             self._EM_step(train_data)
 
         print('fit finish')
@@ -40,7 +45,7 @@ class MMB:
         logp = np.zeros([n, config.num_components])
         for j in range(config.num_components):
             b = np.tile(self.mu[j].reshape([1,-1]), [n,1])
-            logp[:,j] = np.log(self.pi[j]) + test_data * np.log(b) + (1-test_data) * np.log(1-b)
+            logp[:,j] = np.log(self.pi[j]) + np.sum(test_data * np.log(b) + (1-test_data) * np.log(1-b), axis=1)
         return logsumexp(logp, axis=1)
 
     def generate(self, n):
