@@ -29,11 +29,9 @@ class MMB:
         d = train_data.shape[1]
         k = config.num_components
 
-        #self.pi = np.random.rand(k)
-        self.pi = np.ones([k])
+        self.pi = np.random.rand(k)
         self.pi = self.pi / np.sum(self.pi)
-        #self.mu = np.random.rand(k*d).reshape([k,d])
-        self.mu = 0.5 * np.ones([k,d])
+        self.mu = np.random.rand(k*d).reshape([k,d])
 
 
         for iter in range(config.num_EMiters):
