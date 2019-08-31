@@ -1,6 +1,6 @@
-train_size = 300
-validation_size = 75
-test_size = 5000
+train_size = 50000
+validation_size = 10000
+test_size = 10000 # 5000
 data_name = 'mnist'  # 'grid' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
 random_data = False
 
