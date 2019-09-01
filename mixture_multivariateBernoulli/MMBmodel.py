@@ -20,8 +20,8 @@ class MMB:
         gamma = self._compute_gamma(x)
         self.pi = np.sum(gamma, axis=0) / np.sum(gamma)
         self.mu = np.matmul( gamma.T, x) / np.tile(np.sum(gamma, axis=0).reshape([-1,1]), [1,d])
-        self.mu[self.mu == 0] = 0.000001
-        self.mu[self.mu == 1] = 0.999999
+        self.mu[self.mu <= 0] = 0.000001
+        self.mu[self.mu >= 1] = 0.999999
 
 
     def fit(self, train_data, validation_data):
