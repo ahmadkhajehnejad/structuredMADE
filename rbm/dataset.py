@@ -3,7 +3,7 @@ import rbm.config as config
 
 
 def _get_data_from_file(args):
-    with np.load(args['data_file']) as parameters:
+    with np.load(args['data_file'], allow_pickle=True) as parameters:
 
         all_outcomes = parameters['all_outcomes']
         prob_of_outcomes = parameters['prob_of_outcomes']
