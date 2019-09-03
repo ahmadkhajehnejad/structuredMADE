@@ -1,66 +1,61 @@
 import rbm.config as config
-import time
-from sklearn.neural_network import BernoulliRBM as skRBM
-from sklearn.utils import check_array, check_random_state, gen_even_slices
-from scipy.special import expit
-from scipy.misc import logsumexp
 import numpy as np
+import rbm.pydeep.rbm.model as model
+import rbm.pydeep.rbm.trainer as trainer
+import rbm.pydeep.rbm.estimator as estimator
 import sys
-
-class MyBernoulliRBM(skRBM):
-    def fit(self, X, y=None, reset_attributes=True):
-        """Fit the model to the data X.
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} shape (n_samples, n_features)
-            Training data.
-        Returns
-        -------
-        self : BernoulliRBM
-            The fitted model.
-        """
-        X = check_array(X, accept_sparse='csr', dtype=np.float64)
-        n_samples = X.shape[0]
-        rng = check_random_state(self.random_state)
-
-        if reset_attributes:
-            self.components_ = np.asarray(
-                rng.normal(0, 0.01, (self.n_components, X.shape[1])),
-                order='F')
-            self.intercept_hidden_ = np.zeros(self.n_components, )
-            self.intercept_visible_ = np.zeros(X.shape[1], )
-            self.h_samples_ = np.zeros((self.batch_size, self.n_components))
-
-        n_batches = int(np.ceil(float(n_samples) / self.batch_size))
-        batch_slices = list(gen_even_slices(n_batches * self.batch_size,
-                                            n_batches, n_samples))
-        verbose = self.verbose
-        begin = time.time()
-        for iteration in range(1, self.n_iter + 1):
-            for batch_slice in batch_slices:
-                self._fit(X[batch_slice], rng)
-
-            if verbose:
-                end = time.time()
-                print("[%s] Iteration %d, pseudo-likelihood = %.2f,"
-                      " time = %.2fs"
-                      % (type(self).__name__, iteration,
-                         self.score_samples(X).mean(), end - begin))
-                begin = end
-
-        return self
 
 
 class RBM:
-    def __init__(self):
-        self.rbm_model = MyBernoulliRBM(n_components = config.hlayer_size, learning_rate = config.learning_rate,
-                               batch_size = config.batch_size, n_iter = 1)
+    def __init__(self, train_data):
+        self.update_offsets = 0.01
+        if self.update_offsets <= 0.0:
+            self.rbm = model.BinaryBinaryRBM(number_visibles=config.graph_size,
+                                        number_hiddens=config.hlayer_size,
+                                        data=None,
+                                        initial_weights=0.01,
+                                        initial_visible_bias=0.0,
+                                        initial_hidden_bias=0.0,
+                                        initial_visible_offsets=0.0,
+                                        initial_hidden_offsets=0.0)
+        else:
+            self.rbm = model.BinaryBinaryRBM(number_visibles=config.graph_size,
+                                        number_hiddens=config.hlayer_size,
+                                        data=train_data,
+                                        initial_weights=0.01,
+                                        initial_visible_bias='AUTO',
+                                        initial_hidden_bias='AUTO',
+                                        initial_visible_offsets='AUTO',
+                                        initial_hidden_offsets='AUTO')
+
+        self.trainer_pcd = trainer.PCD(self.rbm, num_chains=config.batch_size)
+        #self.rbm_model = MyBernoulliRBM(n_components = config.hlayer_size, learning_rate = config.learning_rate,
+        #                       batch_size = config.batch_size, n_iter = 1)
 
 
     def fit(self, train_data, validation_data):
         print('fit start')
-        #self.rbm_model.fit(train_data)
-        #print('fit finish')
+
+        # Train model
+        print('Training')
+        print('Epoch\t\tRecon. Error\tLog likelihood \tExpected End-Time')
+        for epoch in range(1, config.num_of_epochs + 1):
+
+            # Loop over all batches
+            for b in range(0, train_data.shape[0], config.batch_size):
+                batch = train_data[b:b + config.batch_size, :]
+                self.trainer_pcd.train(data=batch,
+                                  epsilon=0.01,
+                                  update_visible_offsets=self.update_offsets,
+                                  update_hidden_offsets=self.update_offsets)
+
+            # Calculate reconstruction error and expected end time every 10th epoch
+            if epoch % 10 == 0:
+                RE = np.mean(estimator.reconstruction_error(self.rbm, train_data))
+                # print('{}\t\t{:.4f}\t\t\t{}'.format(
+                #     epoch, RE))
+            else:
+                print(epoch)
 
         ####
 
@@ -90,30 +85,8 @@ class RBM:
 
 
     def predict(self, test_data, verbose=False):
-        if verbose:
-            print('    ps')
-        sm = np.zeros([config.density_estimation_MCMC_samples_count, test_data.shape[0]])
-        #v = test_data
-        v = np.array(np.random.rand(test_data.size).reshape(test_data.shape) < 0.5, dtype=float)
-        for i in range(config.density_estimation_MCMC_samples_count):
-            if verbose:
-                print('    ### ', i)
-            for j in range(config.density_estimation_MCMC_burnin):
-                v = self.rbm_model.gibbs(v)
-
-            p_h = self.rbm_model.transform(v)
-            h = np.random.rand(test_data.shape[0], config.hlayer_size) < p_h
-            h = np.array(h, dtype=float)
-
-            p_v = np.dot(h, self.rbm_model.components_)
-            p_v += self.rbm_model.intercept_visible_
-            p_v = expit(p_v)
-
-            sm[i,:] = np.sum(np.log(p_v) * test_data, axis=1)
-            sm[i,:] += np.sum(np.log(1-p_v) * (1 - test_data), axis=1)
-        if verbose:
-            print('    pf')
-        return logsumexp(sm, axis=0) - np.log(config.density_estimation_MCMC_samples_count)
+        logZ_approx_AIS = estimator.annealed_importance_sampling(self.rbm)[0]
+        return np.mean(estimator.log_likelihood_v(self.rbm, logZ_approx_AIS, test_data))
 
     def generate(self, n):
         pass

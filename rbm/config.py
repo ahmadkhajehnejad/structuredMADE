@@ -1,8 +1,8 @@
-hlayer_size = 100
-train_size = 100 # 50000
-validation_size = 25 # 10000
-test_size = 5000 # 10000 #
-data_name = 'grid' # 'mnist' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
+hlayer_size = 500
+train_size = 50000 # 100 #
+validation_size = 10000 # 25 #
+test_size = 10000 # 5000 #
+data_name = 'mnist' # 'grid' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
 random_data = False
 
 ## General configs
@@ -16,7 +16,7 @@ generate_samples = False
 generated_samples_dir = './generated_samples/'
 num_of_generated_samples_each_execution = 100
 num_of_exec = 5
-num_of_epochs = 2000
+num_of_epochs = 25
 batch_size = 50
 
 ## grid configs

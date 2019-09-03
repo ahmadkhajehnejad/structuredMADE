@@ -4,7 +4,7 @@ import numpy as np
 from rbm.dataset import get_data
 from rbm import config as config
 import sys
-from PIL import Image
+#from PIL import Image
 from rbm.RBMmodel import RBM
 
 # tf_config = tf.ConfigProto()
@@ -52,7 +52,7 @@ def execute_one_round():
     #         im = Image.fromarray(255*data['train_data'][i,:].reshape([config.height, config.width]))
     #         im.convert('RGB').save(config.generated_samples_dir+'train_' + str(i)+'.png')
 
-    model = RBM()
+    model = RBM(data['train_data'])
 
     print('model initiated')
     
@@ -62,18 +62,23 @@ def execute_one_round():
         
     res = dict()    
     res['NLL'], res['KL'] = evaluate(pred, data['test_data_probs'])
-    print('KL: ' + str(res['KL']), file=sys.stderr)
-    print('NLL: ' + str(res['NLL']), file=sys.stderr)
+    #print('KL: ' + str(res['KL']), file=sys.stderr)
+    #print('NLL: ' + str(res['NLL']), file=sys.stderr)
+    print('KL: ' + str(res['KL']))
+    print('NLL: ' + str(res['NLL']))
+
     sys.stderr.flush()
     res['train_end_epochs'] = 'Not known' #model.train_end_epochs
     res['num_of_connections'] = '???' #model.num_of_connections()
 
+    '''
     if config.generate_samples:
         n = config.num_of_generated_samples_each_execution
         generated_samples = model.generate(n).reshape(n, config.height, config.width)
         for i in range(n):
             im = Image.fromarray(255*generated_samples[i,:,:])
             im.convert('RGB').save(config.generated_samples_dir+str(i)+'.png')
+    '''
     return res
     
     
@@ -88,7 +93,8 @@ def main():
     train_end_epochs = []
     start_time = time.time()
     for ne in range(0, config.num_of_exec):
-        print('execution #' + str(ne), file=sys.stderr)
+        #print('execution #' + str(ne), file=sys.stderr)
+        print('execution #' + str(ne))
         sys.stderr.flush()
         res = execute_one_round()
         NLLs.append(res['NLL'])
