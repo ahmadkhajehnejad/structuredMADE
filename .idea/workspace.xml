@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="61f800a0-32b9-4f2b-acdc-087042869f4d" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/mixture_multivariateBernoulli/dataset.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/rbm/dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mixture_multivariateBernoulli/MMBmodel.py" beforeDir="false" afterPath="$PROJECT_DIR$/mixture_multivariateBernoulli/MMBmodel.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mixture_multivariateBernoulli/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/mixture_multivariateBernoulli/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mixture_multivariateBernoulli/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/mixture_multivariateBernoulli/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rbm/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/rbm/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rbm/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/rbm/main.py" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mixture_multivariateBernoulli/main.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="45">
+              <caret line="3" column="35" selection-start-line="3" selection-start-column="35" selection-end-line="3" selection-end-column="35" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mixture_multivariateBernoulli/MMBmodel.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="345">
+              <caret line="23" selection-start-line="23" selection-end-line="23" />
+              <folding>
+                <element signature="e#0#53#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/rbm/main.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="300">
+              <caret line="22" column="24" lean-forward="true" selection-start-line="22" selection-start-column="24" selection-end-line="22" selection-end-column="24" />
+              <folding>
+                <element signature="e#1#12#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/rbm/config.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="165">
+              <caret line="11" column="35" selection-start-line="11" selection-start-column="35" selection-end-line="11" selection-end-column="35" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="90">
+              <caret line="6" selection-start-line="6" selection-end-line="6" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>asci</find>
+      <find>assert</find>
+      <find>print</find>
+      <find>made_utils</find>
+      <find>fit</find>
+      <find>K</find>
+      <find>_layers</find>
+      <find>ver</find>
+      <find>verbose</find>
+      <find>axis</find>
+      <find>random_Q_restricted</find>
+      <find>random_Q</find>
+      <find>KLtrain_</find>
+      <find>2_pass</find>
+      <find>varKL</find>
+      <find>avgNLL_</find>
+      <find>NLL</find>
+      <find>Q_restricted__</find>
+      <find>min_related__</find>
+      <find>Q_restricted_s2__</find>
+      <find>build</find>
+      <find>rndord</find>
+      <find>mnist</find>
+      <find>f</find>
+      <find>predict</find>
+      <find>predic</find>
+      <find>keras</find>
+      <find>logsumexp</find>
+      <find>**</find>
+      <find>config</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>NLLtrain_</replace>
+      <replace>varNLL</replace>
+      <replace>avgNLLtrain_</replace>
+      <replace>KL</replace>
+      <replace>Q_restricted_s2__</replace>
+      <replace>min_related_s2__</replace>
+      <replace>Q_restricted_s4__</replace>
+      <replace>fixedord</replace>
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/no_early_stopping/plotter_hlnum7.py" />
+        <option value="$PROJECT_DIR$/datasets/extract_ocr_data.py" />
+        <option value="$PROJECT_DIR$/gen_data.py" />
+        <option value="$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/plotter_hlnum7.py" />
+        <option value="$USER_HOME$/work/Vira/traffic_engine/gps_eta_estimation/kpi/kpi_tools.py" />
+        <option value="$PROJECT_DIR$/plot_results/ocr/drlnkFull/plotter.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/config_base.py" />
+        <option value="$PROJECT_DIR$/plot_results/__init__.py" />
+        <option value="$PROJECT_DIR$/grid_orders.py" />
+        <option value="$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/grid/drlnkFull/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/mnist/drlnkFull/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/grid/drlnkFull/train_likelihood/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/no_early_stopping/plotte_hlnum4r.py" />
+        <option value="$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/plotte_hlnum4r.py" />
+        <option value="$PROJECT_DIR$/made_utils.py" />
+        <option value="$PROJECT_DIR$/MADE_runner.sh" />
+        <option value="$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/no_early_stopping/plotter_hlnum6.py" />
+        <option value="$PROJECT_DIR$/plot_results/k_sparse/drlnkFull/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/BayesNet/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/train_likelihood/plotter.py" />
+        <option value="$PROJECT_DIR$/collect_results.sh" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/k_sparse/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/make_tikz_picture.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/ocr/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/mnist/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter_hlnum4.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter_hlnum6.py" />
+        <option value="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter_1mask.py" />
+        <option value="$PROJECT_DIR$/main_NADE.py" />
+        <option value="$PROJECT_DIR$/make_hdf5.py" />
+        <option value="$PROJECT_DIR$/dataset.py" />
+        <option value="$PROJECT_DIR$/RBM_model.py" />
+        <option value="$PROJECT_DIR$/rbm.py" />
+        <option value="$PROJECT_DIR$/made.py" />
+        <option value="$PROJECT_DIR$/rbm/__init__.py" />
+        <option value="$PROJECT_DIR$/rbm/rbm.py" />
+        <option value="$PROJECT_DIR$/rbm/model.py" />
+        <option value="$PROJECT_DIR$/rbm/RBMmodel.py" />
+        <option value="$PROJECT_DIR$/mmb_main.py" />
+        <option value="$PROJECT_DIR$/config.py" />
+        <option value="$PROJECT_DIR$/mixture_multivariateBernoulli/config.py" />
+        <option value="$PROJECT_DIR$/rbm/dataset.py" />
+        <option value="$PROJECT_DIR$/mixture_multivariateBernoulli/dataset.py" />
+        <option value="$PROJECT_DIR$/mixture_multivariateBernoulli/main.py" />
+        <option value="$PROJECT_DIR$/rbm/main.py" />
+        <option value="$PROJECT_DIR$/mixture_multivariateBernoulli/MMBmodel.py" />
+        <option value="$PROJECT_DIR$/rbm/config.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="91" />
+    <option name="y" value="85" />
+    <option name="width" value="1517" />
+    <option name="height" value="815" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="structuredMADE" type="b2602c69:ProjectViewProjectNode" />
+              <item name="structuredMADE" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="structuredMADE" type="b2602c69:ProjectViewProjectNode" />
+              <item name="structuredMADE" type="462c0819:PsiDirectoryNode" />
+              <item name="mixture_multivariateBernoulli" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="structuredMADE" type="b2602c69:ProjectViewProjectNode" />
+              <item name="structuredMADE" type="462c0819:PsiDirectoryNode" />
+              <item name="rbm" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="full.screen.before.presentation.mode" value="false" />
+    <property name="last_opened_file_path" value="$USER_HOME$/work/Pinket/workspace" />
+    <property name="settings.editor.selected.configurable" value="PyConsoleConfigurable.Python Console" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings module-name="structuredMADE" sdk-home="$USER_HOME$/miniconda2/envs/conpy/bin/python">
+        <option name="mySdkHome" value="$USER_HOME$/miniconda2/envs/conpy/bin/python" />
+        <option name="myModuleName" value="structuredMADE" />
+      </console-settings>
+    </option>
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/rbm" />
+      <recent name="$PROJECT_DIR$/plot_results/BayesNet/drlnkFull" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/mixture_multivariateBernoulli" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/rbm" />
+      <recent name="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid" />
+      <recent name="$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/ocr" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="Unnamed" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="structuredMADE" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/miniconda2/envs/conpy3/bin/python" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="config" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="structuredMADE" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/rbm" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/rbm/config.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="structuredMADE" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/mixture_multivariateBernoulli/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="structuredMADE" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/rbm/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="make_hdf5" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="structuredMADE" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/miniconda2/envs/conpy/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/make_hdf5.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="mmb_main" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="structuredMADE" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/miniconda2/envs/conpy/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/mmb_main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.Unnamed" />
+      <item itemvalue="Python.make_hdf5" />
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python.main (1)" />
+      <item itemvalue="Python.mmb_main" />
+      <item itemvalue="Python.config" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python.config" />
+        <item itemvalue="Python.main (1)" />
+        <item itemvalue="Python.mmb_main" />
+        <item itemvalue="Python.make_hdf5" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="61f800a0-32b9-4f2b-acdc-087042869f4d" name="Default Changelist" comment="" />
+      <created>1544802833830</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1544802833830</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="80" y="-11" width="1521" height="912" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18315507" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32947233" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.4144144" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3989704" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" sideWeight="0.49933067" visible="true" weight="0.32561132" />
+      <window_info anchor="bottom" id="Terminal" order="8" weight="0.24581724" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50066936" side_tool="true" weight="0.32678822" />
+      <window_info anchor="bottom" id="Python Console" order="10" weight="0.3024453" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout>
+    <layout-to-restore>
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22794117" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32947233" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.4144144" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3989704" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32818532" />
+      <window_info anchor="bottom" id="Terminal" order="8" weight="0.51994854" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" weight="0.32947233" />
+      <window_info anchor="bottom" id="Python Console" order="10" weight="0.30501932" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout-to-restore>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="RECENTLY_FILTERED_USER_GROUPS">
+                <collection />
+              </option>
+              <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
+                <collection />
+              </option>
+              <option name="COLUMN_ORDER">
+                <list>
+                  <option value="0" />
+                  <option value="1" />
+                  <option value="2" />
+                  <option value="3" />
+                </list>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list />
+          </value>
+        </entry>
+        <entry key="User">
+          <value>
+            <list />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/made_utils.py</url>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/plot_results/grid/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/mnist/drlnkFull/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/grid_orders.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1185">
+          <caret line="79" column="43" selection-start-line="79" selection-start-column="43" selection-end-line="79" selection-end-column="43" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/plot_results/grid/drlnkFull/train_likelihood/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/plotter_hlnum7.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/no_early_stopping/plotter_hlnum7.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/k_sparse/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/no_early_stopping/plotter_hlnum6.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/plotte_hlnum4r.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/BayesNet/drlnkFull/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/k_sparse/drlnkFull/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/grid/drlnkFull/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/bad_early_stop/grid/drlnkFull/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/BayesNet/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/bad_early_stop/mnist/drlnkFull/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/bad_early_stop/k_sparse/drlnkFull/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/collect_results.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="540">
+          <caret line="36" column="12" lean-forward="true" selection-start-line="36" selection-start-column="12" selection-end-line="36" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/k_sparse/plotter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="328">
+          <caret line="125" column="32" selection-start-line="125" selection-start-column="32" selection-end-line="125" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/plot_results/make_tikz_picture.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="253">
+          <caret line="26" column="39" selection-start-line="26" selection-start-column="39" selection-end-line="26" selection-end-column="39" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/mnist/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/ocr/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/train_likelihood/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter_hlnum4.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter_hlnum6.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter_1mask.py" />
+    <entry file="file://$PROJECT_DIR$/plot_results/good_early_stop/Fulldrlnk/grid/plotter.py" />
+    <entry file="file://$PROJECT_DIR$/main_NADE.py" />
+    <entry file="file://$PROJECT_DIR$/make_hdf5.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="22" selection-start-line="22" selection-end-line="22" />
+          <folding>
+            <element signature="e#1#14#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config_base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="6" column="43" selection-start-line="6" selection-start-column="43" selection-end-line="6" selection-end-column="43" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gen_data_structure.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="16" column="24" selection-start-line="16" selection-start-column="24" selection-end-line="16" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="60" column="28" selection-start-line="60" selection-start-column="28" selection-end-line="60" selection-end-column="28" />
+          <folding>
+            <element signature="e#1#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RBM_model.py" />
+    <entry file="file://$PROJECT_DIR$/gen_data_params.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" column="38" selection-start-line="12" selection-start-column="38" selection-end-line="12" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/made_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="454">
+          <caret line="172" column="27" selection-start-line="172" selection-start-column="27" selection-end-line="172" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MADE_runner.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="449">
+          <caret line="32" column="73" selection-start-line="32" selection-start-column="73" selection-end-line="32" selection-end-column="73" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/__init__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/rbm/__init__.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gen_data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/made.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="729">
+          <caret line="604" column="18" lean-forward="true" selection-start-line="604" selection-start-column="18" selection-end-line="604" selection-end-column="18" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mmb_main.py" />
+    <entry file="file://$PROJECT_DIR$/config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="163">
+          <caret line="23" column="46" lean-forward="true" selection-start-line="23" selection-start-column="46" selection-end-line="23" selection-end-column="46" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mixture_multivariateBernoulli/config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret lean-forward="true" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="223">
+          <caret line="228" column="68" selection-start-line="228" selection-start-column="68" selection-end-line="228" selection-end-column="68" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/rbm/dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" column="24" lean-forward="true" selection-start-line="11" selection-start-column="24" selection-end-line="11" selection-end-column="24" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mixture_multivariateBernoulli/dataset.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1" column="36" selection-start-line="1" selection-start-column="36" selection-end-line="1" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/rbm/RBMmodel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="848">
+          <caret line="97" column="29" selection-start-line="97" selection-start-column="23" selection-end-line="97" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#27#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mixture_multivariateBernoulli/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="45">
+          <caret line="3" column="35" selection-start-line="3" selection-start-column="35" selection-end-line="3" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mixture_multivariateBernoulli/MMBmodel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="23" selection-start-line="23" selection-end-line="23" />
+          <folding>
+            <element signature="e#0#53#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/rbm/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="22" column="24" lean-forward="true" selection-start-line="22" selection-start-column="24" selection-end-line="22" selection-end-column="24" />
+          <folding>
+            <element signature="e#1#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/rbm/config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" column="35" selection-start-line="11" selection-start-column="35" selection-end-line="11" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="6" selection-start-line="6" selection-end-line="6" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

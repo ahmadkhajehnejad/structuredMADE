@@ -1,17 +1,15 @@
 
-hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
 use_multiprocessing = True
 num_of_all_masks = 10
 num_of_hlayer = 2
-hlayer_size = 100
+hlayer_size = 1200
 random_dimensions_order = True
 direct_links = 'Full'
-algorithm = 'orig'
-train_size = 300
-validation_size = 75
+algorithm = 'Q_restricted'
+train_size = 1000
+validation_size = 250
 test_size = 5000
-data_name = 'mnist' # 'grid' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
-learn_alpha = True
+data_name = 'mnistdps4' # 'ocrdp1' # 'grid' # 'k_sparse'
 random_data = False
 from keras import optimizers
 
@@ -20,7 +18,7 @@ from keras import optimizers
 AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
 
 use_multiprocessing = True
-generate_samples = False
+generate_samples = True
 generated_samples_dir = './generated_samples/'
 num_of_generated_samples_each_execution = 100
 num_of_exec = 1

@@ -1,5 +1,6 @@
 import numpy as np
 import config
+import h5py
 
 def _get_data_from_file(args):
     
@@ -145,6 +146,16 @@ def get_data(args):
     else:
         return None
 
+
+def make_hdf5(args, filename):
+    data = get_data(args)
+    with h5py.File(filename, 'w') as f:
+        tr = f.create_group("train")
+        tr.create_dataset("data", data = data['train_data'])
+        va = f.create_group("validation")
+        va.create_dataset("data", data = data['valid_data'])
+        te = f.create_group("test")
+        te.create_dataset("data", data = data['test_data'])
 
 def get_data_structure():
     parameters = dict()

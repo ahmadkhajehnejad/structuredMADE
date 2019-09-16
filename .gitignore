@@ -4,4 +4,4 @@ cerr_log
 __pycache__
 MADE_runner.sh
 datasets
-config.py
+./config.py
