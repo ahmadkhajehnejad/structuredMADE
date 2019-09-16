@@ -514,24 +514,46 @@ class MADE:
         early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto',
                                      train_end_epochs=self.train_end_epochs)
 
-        train_size = train_data.shape[0]
-        validation_size = validation_data.shape[0]
-        reped_state_train = (np.arange(train_size*config.num_of_all_masks)/train_size).astype(np.int32)
-        reped_state_valid = (np.arange(validation_size*config.num_of_all_masks)/validation_size).astype(np.int32)
-        reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
-        reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
+        if config.fast_train == True:
+            validation_size = validation_data.shape[0]
+            reped_state_valid = (np.arange(validation_size * config.num_of_all_masks) / validation_size).astype(
+                np.int32)
+            reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
 
-        for i in range(0, config.fit_iter):
-            self.autoencoder.fit(x=[reped_traindata, reped_state_train],
-                                 y=[reped_traindata],
-                                 epochs=config.num_of_epochs,
-                                 batch_size=config.batch_size,
-                                 shuffle=True,
-                                 validation_data=([reped_validdata, reped_state_valid],
-                                                  [reped_validdata]),
-                                 callbacks=[early_stop],
-                                 verbose=0)
+            for i in range(0, config.fit_iter):
+                train_size = train_data.shape[0]
+                reped_state_train = np.random.randint(0, config.num_of_all_masks, train_size)
+                reped_traindata = train_data
+                self.autoencoder.fit(x=[reped_traindata, reped_state_train],
+                                     y=[reped_traindata],
+                                     epochs=config.num_of_epochs,
+                                     batch_size=config.batch_size,
+                                     shuffle=True,
+                                     validation_data=([reped_validdata, reped_state_valid],
+                                                      [reped_validdata]),
+                                     callbacks=[early_stop],
+                                     verbose=1)
 
+        else:
+            train_size = train_data.shape[0]
+            reped_state_train = (np.arange(train_size * config.num_of_all_masks) / train_size).astype(np.int32)
+            reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
+            validation_size = validation_data.shape[0]
+            reped_state_valid = (np.arange(validation_size*config.num_of_all_masks)/validation_size).astype(np.int32)
+            reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
+
+            for i in range(0, config.fit_iter):
+                self.autoencoder.fit(x=[reped_traindata, reped_state_train],
+                                     y=[reped_traindata],
+                                     epochs=config.num_of_epochs,
+                                     batch_size=config.batch_size,
+                                     shuffle=True,
+                                     validation_data=([reped_validdata, reped_state_valid],
+                                                      [reped_validdata]),
+                                     callbacks=[early_stop],
+                                     verbose=1)
+        
+        
         if config.learn_alpha == True:
 
             for l in range(config.num_of_hlayer):
