@@ -1,8 +1,10 @@
-train_size = 1000
-validation_size = 250
+train_size = 32152
+validation_size = 8000
 test_size = 5000
-data_name = 'mnist' # 'ocr' # 'k_sparse' # 'grid' # 'mnistdps4' # 'ocrdp1' #
+data_name = 'ocr' # 'mnist' # 'k_sparse' # 'grid' # 'mnistdps4' # 'ocrdp1' #
 random_data = False
+
+number_of_permutations = 10
 
 ## General configs
 
