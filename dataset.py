@@ -147,15 +147,15 @@ def get_data(args):
         return None
 
 
-def make_hdf5(args, filename):
+1def make_hdf5(args, filename):
     data = get_data(args)
     with h5py.File(filename, 'w') as f:
         tr = f.create_group("train")
-        tr.create_dataset("data", data = data['train_data'])
+        tr.create_dataset("data", data = np.array(data['train_data'], dtype=np.float32))
         va = f.create_group("validation")
-        va.create_dataset("data", data = data['valid_data'])
+        va.create_dataset("data", data = np.array(data['valid_data'], dtype=np.float32))
         te = f.create_group("test")
-        te.create_dataset("data", data = data['test_data'])
+        te.create_dataset("data", data = np.array(data['test_data'], dtype=np.float32))
 
 def get_data_structure():
     parameters = dict()
