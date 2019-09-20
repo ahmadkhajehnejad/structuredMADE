@@ -21,6 +21,11 @@ class MaskedDenseLayer(Layer):
                                       initializer='glorot_uniform',
                                       trainable=True,
                                       dtype="float32")
+        self.b_0 = self.add_weight(name='b_0', 
+                                      shape=(1,1),
+                                      initializer='glorot_uniform',
+                                      trainable=True,
+                                      dtype="float32")
         super(MaskedDenseLayer, self).build(input_shape)  # Be sure to call this somewhere!
     
     def call(self, l):
@@ -32,7 +37,7 @@ class MaskedDenseLayer(Layer):
 
         tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(state,[-1]))
         masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
-        output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
+        output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked) + self.b_0
         return self._activation(K.reshape(output,[bs,self.output_dim]))
   
     def compute_output_shape(self, input_shape):

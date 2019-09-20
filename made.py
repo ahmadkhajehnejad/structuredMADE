@@ -359,6 +359,7 @@ class MADE:
                         raise Exception('Error' + str(config.direct_links))
             #print(tmp_mask.shape)
             mask = np.concatenate([mask, tmp_mask],axis=0)
+            #mask = tmp_mask
             
         masks.append(mask)
         return masks
@@ -424,6 +425,7 @@ class MADE:
             hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')( [hlayer, state] )
         if config.direct_links:
             clayer = Concatenate()([hlayer, input_layer])
+            #clayer = input_layer
             output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer, state] )
         else:
             output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [hlayer, state] )
@@ -601,6 +603,9 @@ class MADE:
             #log_probs = np.zeros([config.num_of_all_masks, test_size])
             for j in range(config.num_of_all_masks):
                 made_predict = self.autoencoder.predict([test_data, j * np.ones([test_size,1])])#.reshape(1, hlayer_size, graph_size)]
+                eps = 0.00001
+                made_predict[made_predict < eps] = eps
+                made_predict[made_predict > 1- eps] = 1-eps
 
                 corrected_probs = np.multiply(np.power(made_predict, test_data),
                                 np.power(np.ones(made_predict.shape) - made_predict, np.ones(test_data.shape) - test_data))
