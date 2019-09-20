@@ -13,6 +13,8 @@ import bfs_orders
 if config.use_multiprocessing:
     from multiprocessing import Process, Queue
 #import sys
+from scipy.misc import logsumexp
+
 
 def _spread(current_node, root_node, visited, adj, pi):
         visited[current_node]=True
@@ -599,28 +601,29 @@ class MADE:
             res = np.log(probs)
         else:
             test_size = test_data.shape[0]
-            probs = np.zeros([config.num_of_all_masks, test_size])
-            #log_probs = np.zeros([config.num_of_all_masks, test_size])
+            #probs = np.zeros([config.num_of_all_masks, test_size])
+            log_probs = np.zeros([config.num_of_all_masks, test_size])
             for j in range(config.num_of_all_masks):
                 made_predict = self.autoencoder.predict([test_data, j * np.ones([test_size,1])])#.reshape(1, hlayer_size, graph_size)]
                 eps = 0.00001
                 made_predict[made_predict < eps] = eps
                 made_predict[made_predict > 1- eps] = 1-eps
 
-                corrected_probs = np.multiply(np.power(made_predict, test_data),
-                                np.power(np.ones(made_predict.shape) - made_predict, np.ones(test_data.shape) - test_data))
+                #corrected_probs = np.multiply(np.power(made_predict, test_data),
+                                # np.power(np.ones(made_predict.shape) - made_predict, np.ones(test_data.shape) - test_data))
+                # made_prob = np.prod(corrected_probs, 1)
+                #probs[j][:] = made_prob
 
-                #made_log_prob = np.sum(np.log(corrected_probs), axis=1)
-                #log_probs[j][:] = made_log_prob
-
-                made_prob = np.prod(corrected_probs, 1)
-                probs[j][:] = made_prob
+                corrected_log_probs = (np.log(made_predict) * test_data) + (np.log(1 - made_predict) * (1 - test_data))
+                made_log_prob = np.sum(corrected_log_probs, axis=1)
+                log_probs[j][:] = made_log_prob
 
             if config.learn_alpha == 'heuristic':
-                res = np.log(np.matmul(self.alpha.reshape([1,-1]), probs)).reshape([-1])
+                #res = np.log(np.matmul(self.alpha.reshape([1,-1]), probs)).reshape([-1])
+                res = np.log(np.matmul(self.alpha.reshape([1, -1]), np.exp(log_probs))).reshape([-1])
             else:
-                #res = log_sum_exp(log_probs, axis=0) - np.log(config.num_of_all_masks)
-                res = np.log(np.mean(probs, axis=0))
+                #res = np.log(np.mean(probs, axis=0))
+                res = logsumexp(log_probs, axis=0) - np.log(config.num_of_all_masks)
         return res
 
     def generate(self, n):
