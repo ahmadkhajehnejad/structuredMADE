@@ -147,7 +147,7 @@ def get_data(args):
         return None
 
 
-1def make_hdf5(args, filename):
+def make_hdf5(args, filename):
     data = get_data(args)
     with h5py.File(filename, 'w') as f:
         tr = f.create_group("train")
