@@ -2,38 +2,39 @@ use_best_validated_weights=True
 learn_alpha=False
 masks_no=10
 hlnum=2
-hlsize_list=(200)
-rnd_dim_ord=True # False # 'grid'
+hlsize_list=(25 50 100)
+rnd_dim_ord_list=(False True "'grid'") # False # 
 direct_links="'Full'" # True # False #
-algs_list=("orig" "Q_restricted") # ('min_related' "random_Q_restricted") # 'ensemble_Q_restricted_and_orig'
-dataset='k_sparse' # 'grid' # 'mnist' # 'Boltzmann' #
+algs_list=("orig" 'min_related' "Q_restricted") # ("random_Q_restricted") # 'ensemble_Q_restricted_and_orig'
+dataset='grid' # 'k_sparse' # 'mnist' # 'Boltzmann' #
 rnd_data=False
-prefix='Average KLs: ' # 'Variance KLs: ' # 'avg Num of Connections ' #
+fast_train=False
+prefix_avg='Average KLs: ' # 'Variance KLs: ' # 'avg Num of Connections ' #
+prefix_var='Variance KLs: ' # 'Variance KLs: ' # 'avg Num of Connections ' #
 
 
 #####################################
 
+for rnd_dim_ord in ${rnd_dim_ord_list[@]}; do
 for hlsize in ${hlsize_list[@]}; do
         for alg in ${algs_list[@]}; do
-                file_str_1="use_best_validated_weights:$use_best_validated_weights - learn_alpha:$learn_alpha - rnddata:$rnd_data - data:$dataset - alg:$alg - drlnk:$direct_links - rndord:$rnd_dim_ord - hlnum:$hlnum - hlsize:$hlsize - masksNum:$masks_no"
+                file_str_1="use_best_validated_weights:$use_best_validated_weights - learn_alpha:$learn_alpha - rnddata:$rnd_data - data:$dataset - alg:$alg - drlnk:$direct_links - rndord:$rnd_dim_ord - hlnum:$hlnum - hlsize:$hlsize - masksNum:$masks_no - fastTrain:$fast_train"
                 #file_str_1="learn_alpha:$learn_alpha - rnddata:$rnd_data - data:$dataset - alg:$alg - drlnk:$direct_links - rndord:$rnd_dim_ord - hlnum:$hlnum - hlsize:$hlsize - masksNum:$masks_no"
-                results="avgKL__rndord_${alg}__hlsize_$hlsize =  ["
+		echo " "
+                echo "order: $rnd_dim_ord  ,  hlsize: $hlsize,  algo: $alg  ###########"
                 for i in 1 2 3 4 5; do
                         TR=$((100*$i))
                         VAL=$((25*$i))
                         TE=5000
                         file_str="$file_str_1 - TR:$TR - VAL:$VAL - TE:$TE"
-                        res_path="./results_good_early_stop/result -- $file_str.txt"
-                        catched_line=$(cat "$res_path" | grep "$prefix")
-                        new_result=${catched_line#$prefix}
-                        if [ $((i)) -lt 5 ]; then
-                                results="$results $new_result,"
-                        else
-                                results="$results $new_result]"
-                        fi
-
+                        res_path="./results_revision_biasedMADE/result -- $file_str.txt"
+                        catched_line_avg=$(cat "$res_path" | grep "$prefix_avg")
+                        catched_line_var=$(cat "$res_path" | grep "$prefix_var")
+                        avg=${catched_line_avg#$prefix_avg}
+                        var=${catched_line_var#$prefix_var}
+			std=$(echo "sqrt($var)" | bc)
+			echo "($TR, $avg) +- ($var, $var)"
                 done
-                echo $results
         done
 done
-
+done
