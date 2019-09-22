@@ -14,6 +14,7 @@ if config.use_multiprocessing:
     from multiprocessing import Process, Queue
 #import sys
 from scipy.misc import logsumexp
+from sklearn.linear_model import LogisticRegression
 
 
 def _spread(current_node, root_node, visited, adj, pi):
@@ -85,7 +86,7 @@ class MADE:
                 (str(config.random_dimensions_order).endswith('bfs-random')):
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
-        self.all_masks,_ = self.generate_all_masks()
+        self.all_masks, self.all_pi = self.generate_all_masks()
 
         #print('avg reaching sizes: ', np.mean(self.reaching_dimesions_num()))
 
@@ -514,7 +515,6 @@ class MADE:
     '''
 
     def fit(self, train_data, validation_data):
-
         early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto',
                                      train_end_epochs=self.train_end_epochs)
 

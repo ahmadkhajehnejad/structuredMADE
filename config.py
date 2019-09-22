@@ -10,9 +10,11 @@ algorithm = 'orig'
 train_size = 300
 validation_size = 75
 test_size = 5000
-data_name = 'mnist' # 'grid' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
+data_name = 'grid' # 'mnist' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
 learn_alpha = True
 random_data = False
+use_best_validated_weights = True
+fast_train = False
 from keras import optimizers
 
 ## General configs
