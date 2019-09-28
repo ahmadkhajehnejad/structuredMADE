@@ -16,6 +16,7 @@ batch_size = 50
 optimizer = AE_adam
 patience = 20 # 2 * num_of_all_masks
 Q_restricted_2_pass = True
+logReg_pretrain = False
 
 ## grid configs
 if data_name == 'grid':
