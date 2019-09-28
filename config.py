@@ -1,36 +1,36 @@
-
 hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
 use_multiprocessing = True
 num_of_all_masks = 10
 num_of_hlayer = 2
 hlayer_size = 100
-random_dimensions_order = True
+random_dimensions_order = True # 'grid' # 'grid_from_center' # 
 direct_links = 'Full'
-algorithm = 'orig'
+algorithm = 'orig' # 'Q_restricted' # 'min_related' # 
 train_size = 300
 validation_size = 75
 test_size = 5000
-data_name = 'grid' # 'mnist' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
-learn_alpha = True
+data_name = 'grid' # 'mnistdps4' # 'mnist' # 'ocrdp1' # 'k_sparse'
+learn_alpha = False
 random_data = False
 use_best_validated_weights = True
-fast_train = False
+fast_train = False # True # 
+logReg_pretrain = False # True #         
 from keras import optimizers
 
 ## General configs
 
-AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
+AE_adam = optimizers.Adam(lr=0.003, beta_1=0.1)
 
 use_multiprocessing = True
 generate_samples = False
 generated_samples_dir = './generated_samples/'
 num_of_generated_samples_each_execution = 100
-num_of_exec = 1
+num_of_exec = 5
 fit_iter = 1
 num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
 batch_size = 50
 optimizer = AE_adam
-patience = 2 * num_of_all_masks
+patience = 20
 Q_restricted_2_pass = True
 
 ## grid configs

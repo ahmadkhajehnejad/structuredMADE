@@ -6,24 +6,27 @@ import tensorflow as tf
 import numpy as np
 import warnings
 import config
+import keras
 
 
 class MaskedDenseLayer(Layer):
+
     def __init__(self, output_dim, masks ,activation, **kwargs):
         self.output_dim = output_dim
         super(MaskedDenseLayer, self).__init__(**kwargs)
         self._mask = masks
         self._activation = activations.get(activation)
+
     def build(self, input_shape):
         # Create a trainable weight variable for this layer.
         self.kernel = self.add_weight(name='kernel', 
                                       shape=(input_shape[0][1], self.output_dim),
-                                      initializer='glorot_uniform',
+                                      initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.1, seed=234), #'glorot_uniform',
                                       trainable=True,
                                       dtype="float32")
         self.b_0 = self.add_weight(name='b_0', 
                                       shape=(1, self.output_dim),
-                                      initializer='glorot_uniform',
+                                      initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.1, seed=234), #'glorot_uniform',
                                       trainable=True,
                                       dtype="float32")
         super(MaskedDenseLayer, self).build(input_shape)  # Be sure to call this somewhere!
@@ -39,8 +42,8 @@ class MaskedDenseLayer(Layer):
         masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
         output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
         output = K.reshape(output,[bs,self.output_dim]) + K.tile(self.b_0, [bs, 1])
-        return self._activation(output)
-  
+        return self._activation(output) 
+
     def compute_output_shape(self, input_shape):
         return (input_shape[0][0], self.output_dim)
 
@@ -134,10 +137,11 @@ def negative_log_likelihood_loss(y_true, y_pred):
 
 
 class MyEarlyStopping(Callback):
-    def __init__(self, monitor='val_loss',
+    def __init__(self, model, monitor='val_loss',
                  min_delta=0, patience=0, verbose=0, mode='auto', train_end_epochs = []):
         super(MyEarlyStopping, self).__init__()
 
+        self.model = model
         self.monitor = monitor
         self.patience = patience
         self.verbose = verbose
@@ -184,15 +188,31 @@ class MyEarlyStopping(Callback):
             )
             return
         if self.monitor_op(current - self.min_delta, self.best):
-            self.best = current
+            if self.monitor_op(current, self.best):
+                self.best = current
+                if config.use_best_validated_weights:
+                    self.best_weights = self.model.get_weights()
             self.wait = 0
-            if config.use_best_validated_weights:
-                self.best_weights = self.model.get_weights()
+                
         else:
             self.wait += 1
             if self.wait >= self.patience:
                 self.stopped_epoch = epoch
                 self.model.stop_training = True
+        '''
+        print('           counter:   ', self.wait)
+        print('           current:   ', current)
+        print('           best:      ', self.best)
+        #print('           curr-dlt:  ', current - self.min_delta)
+        #print('           min_delta: ', self.min_delta)
+        W = self.model.layers[-1].get_weights()[0]
+        print('           train_loss_reg: ', logs.get('loss'))
+        print('           val_loss_reg: ', logs.get('val_loss'))
+        r_ = self.model.reg_coef * K.eval(self.model.reg_function(W))
+        print('           train_loss: ', logs.get('loss') - r_, '   ', r_)
+        print('           val_loss: ', logs.get('val_loss') - r_, '   ', r_)
+        '''
+
 
     def on_train_end(self, logs=None):
         self.train_end_epochs.append(self.stopped_epoch)

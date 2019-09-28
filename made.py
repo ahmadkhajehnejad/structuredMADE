@@ -7,6 +7,7 @@ from made_utils import MaskedDenseLayer, MyEarlyStopping, MaskedDenseLayerMultiM
     LikelihoodConvexCombinationLayer, negative_log_likelihood_loss #, log_sum_exp
 from dataset import get_data_structure
 #from keras import optimizers
+import keras
 import grid_orders
 import bfs_orders
 #import threading
@@ -375,48 +376,6 @@ class MADE:
                 cnt += np.sum(mask)
         return cnt
 
-    '''
-    def build_autoencoder_old(self):
-
-        if config.learn_alpha:
-
-            input_layer = Input(shape=(config.num_of_all_masks * config.graph_size,))
-
-
-            reshape_layer = Reshape(target_shape=(config.num_of_all_masks, config.graph_size))(input_layer)
-
-            hlayer = MaskedDenseLayerMultiMasks(config.hlayer_size, np.array(self.all_masks[0]), 'relu')([reshape_layer])
-            for i in range(1, config.num_of_hlayer):
-                hlayer = MaskedDenseLayerMultiMasks(config.hlayer_size, np.array(self.all_masks[i]), 'relu')([hlayer])
-            if config.direct_links:
-                clayer = Concatenate()([hlayer, reshape_layer])
-                pre_output_layer = MaskedDenseLayerMultiMasks(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')([clayer])
-            else:
-                pre_output_layer = MaskedDenseLayerMultiMasks(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')([hlayer])
-
-            output_layer = LikelihoodConvexCombinationLayer(config.num_of_all_masks)([pre_output_layer, reshape_layer])
-            autoencoder = Model(inputs=[input_layer], outputs=[output_layer])
-
-            autoencoder.compile(optimizer=config.optimizer, loss=negative_log_likelihood_loss)
-
-        else:
-
-            input_layer = Input(shape=(config.graph_size,))
-            state = Input(shape=(1,), dtype="int32")
-
-            hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')( [input_layer, state] )
-            for i in range(1,config.num_of_hlayer):
-                hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')( [hlayer, state] )
-            if config.direct_links:
-                clayer = Concatenate()([hlayer, input_layer])
-                output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer, state] )
-            else:
-                output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [hlayer, state] )
-            autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
-
-            autoencoder.compile(optimizer=config.optimizer, loss='binary_crossentropy')
-        return autoencoder
-    '''
 
     def build_autoencoder(self):
 
@@ -434,6 +393,20 @@ class MADE:
             output_layer = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [hlayer, state] )
         autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
 
+
+        '''
+        def reg_(W):
+            return K.sum(K.pow(W, 2)) # K.mean(K.sqrt(K.sum(K.pow(W, 2), axis=0)))
+
+        autoencoder.reg_function = reg_
+        autoencoder.reg_coef = 1./(config.batch_size * config.graph_size)
+
+        def regularized_binary_cross_entropy_loss(y_true, y_pred):
+            W = autoencoder.layers[-1].trainable_weights[0]
+            return keras.losses.binary_crossentropy(y_true, y_pred) + autoencoder.reg_coef * autoencoder.reg_function(W)
+
+        autoencoder.compile(optimizer=config.optimizer, loss=regularized_binary_cross_entropy_loss)
+        '''
         autoencoder.compile(optimizer=config.optimizer, loss='binary_crossentropy')
 
         if config.learn_alpha == True:
@@ -457,65 +430,66 @@ class MADE:
 
             autoencoder_2.compile(optimizer=config.optimizer, loss=negative_log_likelihood_loss)
 
-            '''
-            for l in range(config.num_of_hlayer + 4):
-                print(l, autoencoder.get_layer(index=l))
-
-            print()
-
-            for l in range(config.num_of_hlayer + 5):
-                print(l, autoencoder_2.get_layer(index=l))
-            '''
-
             return autoencoder, autoencoder_2
 
         else:
             return autoencoder
 
-    '''
-    def fit_old(self, train_data, validation_data):
 
-        early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto',
-                                     train_end_epochs=self.train_end_epochs)
+    def logReg_pretrain(self, train_data):
+        print('training start')
+        print('logistic regressions start')
+        d = train_data.shape[1]
 
-        if config.learn_alpha:
-            for i in range(0, config.fit_iter):
-                self.autoencoder.fit(x=np.tile( train_data.reshape([-1, 1, config.graph_size]), [1, config.num_of_all_masks, 1]).reshape([-1, config.num_of_all_masks*config.graph_size]),\
-                                     y=np.zeros((train_data.shape[0], 1)),
-                                      epochs=config.num_of_epochs,
-                                      batch_size=config.batch_size,
-                                      shuffle=True,
-                                      validation_data=(np.tile(validation_data.reshape([-1, 1, config.graph_size]), [1, config.num_of_all_masks, 1]).reshape([-1, config.num_of_all_masks*config.graph_size]), \
-                                                       np.zeros((validation_data.shape[0],1))),
-                                      callbacks=[early_stop],
-                                      verbose=0)
-
-            #alpha = np.exp(K.eval(self.autoencoder._layers[-1]._trainable_weights[0]))
-            alpha = np.exp(self.autoencoder.get_layer(index=-1).get_weights()[0])
-            print('alpha: ', alpha/np.sum(alpha))
-
+        pi = self.all_pi[0]
+        q = np.zeros([d], dtype=int)
+        for i in range(d):
+            q[pi[i]] = i
+        self.unique_label = [None] * d
+        if np.unique(train_data[:, q[0]]).size == 1:
+            self.unique_label[0] = train_data[0, q[0]]
         else:
-            train_size = train_data.shape[0]
-            validation_size = validation_data.shape[0]
-            reped_state_train = (np.arange(train_size*config.num_of_all_masks)/train_size).astype(np.int32)
-            reped_state_valid = (np.arange(validation_size*config.num_of_all_masks)/validation_size).astype(np.int32)
-            reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
-            reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
+            self.mu_0 = np.sum(train_data[:, q[0]] == 1) / train_data.shape[0]
+        clf = [None] * d
+        for i in range(1, d):
+            if np.unique(train_data[:, q[i]]).size == 1:
+                self.unique_label[i] = train_data[0, q[i]]
+            else:
+                clf[i] = LogisticRegression(random_state=0, solver='liblinear', penalty='l1',  C=1,
+                                            multi_class='ovr').fit(train_data[:, q[:i]].reshape([-1, i]),
+                                                                   train_data[:, q[i]])
 
-            for i in range(0, config.fit_iter):
-                self.autoencoder.fit(x=[reped_traindata, reped_state_train],
-                                      y=[reped_traindata],
-                                      epochs=config.num_of_epochs,
-                                      batch_size=config.batch_size,
-                                      shuffle=True,
-                                      validation_data=([reped_validdata, reped_state_valid],
-                                                        [reped_validdata]),
-                                      callbacks=[early_stop],
-                                      verbose=0)
-    '''
+        print('logistic regressions finish')
+
+        W = np.zeros([d, d])
+        b_0 = np.zeros([d])
+        for i in range(d):
+            if self.unique_label[i] == 0:
+                b_0[q[i]] = -20
+            elif self.unique_label[i] == 1:
+                b_0[q[i]] = 20
+            else:
+                if i == 0:
+                    b_0[q[i]] = np.log(self.mu_0)
+                else:
+                    if clf[i].classes_[0] == 1:
+                        W[q[:i], q[i]] = -clf[i].coef_
+                    else:
+                        W[q[:i], q[i]] = clf[i].coef_
+                    b_0[q[i]] = clf[i].intercept_
+        W_all = np.zeros(self.autoencoder.layers[-1].get_weights()[0].shape)
+        W_all[ -d:, :] = W
+        self.autoencoder.layers[-1].set_weights([W_all, b_0.reshape([1, -1])])
+        print('pre-training finish')
+
+
 
     def fit(self, train_data, validation_data):
-        early_stop = MyEarlyStopping(monitor='val_loss', min_delta=0, patience=config.patience, verbose=1, mode='auto',
+
+        if config.logReg_pretrain == True:
+            self.logReg_pretrain(train_data)
+
+        early_stop = MyEarlyStopping(self.autoencoder, monitor='val_loss', min_delta=-0.0, patience=config.patience, verbose=1, mode='auto',
                                      train_end_epochs=self.train_end_epochs)
 
         if config.fast_train == True:
@@ -556,8 +530,7 @@ class MADE:
                                                       [reped_validdata]),
                                      callbacks=[early_stop],
                                      verbose=1)
-        
-        
+              
         if config.learn_alpha == True:
 
             for l in range(config.num_of_hlayer):
@@ -595,7 +568,9 @@ class MADE:
             self.alpha = (self.alpha + 1) / np.sum(self.alpha + 1)
             print('alpha: ', self.alpha)
 
+
     def predict(self, test_data):
+        print('predict start')
         if config.learn_alpha == True:
             probs = self.autoencoder_2.predict(np.tile(test_data.reshape([-1,1,config.graph_size]), [1,config.num_of_all_masks,1]).reshape([-1, config.num_of_all_masks*config.graph_size]))
             res = np.log(probs)
@@ -624,6 +599,7 @@ class MADE:
             else:
                 #res = np.log(np.mean(probs, axis=0))
                 res = logsumexp(log_probs, axis=0) - np.log(config.num_of_all_masks)
+        print('predict finish')
         return res
 
     def generate(self, n):
