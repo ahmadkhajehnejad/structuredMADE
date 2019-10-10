@@ -53,13 +53,14 @@ class RBM:
 
             val_LL = np.mean(self.predict(validation_data))
             if val_LL > best_val_LL:
+                best_val_LL = val_LL
                 early_stop_cnt = 0
             else:
                 early_stop_cnt += 1
             if early_stop_cnt > config.patience:
                 break
 
-            print(epoch, '         best_val_LL', best_val_LL)
+            print(epoch, '         best_val_LL:', best_val_LL, '     early_stop_cnt:', early_stop_cnt)
 
             # Calculate reconstruction error and expected end time every 10th epoch
             #if epoch % 10 == 0:
