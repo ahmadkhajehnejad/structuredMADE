@@ -39,6 +39,8 @@ class RBM:
         # Train model
         print('Training')
         print('Epoch\t\tRecon. Error\tLog likelihood \tExpected End-Time')
+        best_val_LL = -np.Inf
+        early_stop_cnt = 0
         for epoch in range(1, config.num_of_epochs + 1):
 
             # Loop over all batches
@@ -49,13 +51,23 @@ class RBM:
                                   update_visible_offsets=self.update_offsets,
                                   update_hidden_offsets=self.update_offsets)
 
-            # Calculate reconstruction error and expected end time every 10th epoch
-            if epoch % 10 == 0:
-                RE = np.mean(estimator.reconstruction_error(self.rbm, train_data))
-                # print('{}\t\t{:.4f}\t\t\t{}'.format(
-                #     epoch, RE))
+            val_LL = np.mean(self.predict(validation_data))
+            if val_LL > best_val_LL:
+                early_stop_cnt = 0
             else:
-                print(epoch)
+                early_stop_cnt += 1
+            if early_stop_cnt > config.patience:
+                break
+
+            print(epoch, '         best_val_LL', best_val_LL)
+
+            # Calculate reconstruction error and expected end time every 10th epoch
+            #if epoch % 10 == 0:
+            #    RE = np.mean(estimator.reconstruction_error(self.rbm, train_data))
+            #    # print('{}\t\t{:.4f}\t\t\t{}'.format(
+            #    #     epoch, RE))
+            #else:
+            #    print(epoch, '         best_val_LL', best_val_LL)
 
         ####
 

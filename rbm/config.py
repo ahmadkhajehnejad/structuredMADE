@@ -1,8 +1,8 @@
-hlayer_size = 500
-train_size = 50000 # 100 #
-validation_size = 10000 # 25 #
-test_size = 10000 # 5000 #
-data_name = 'mnist' # 'grid' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
+hlayer_size = 100
+train_size = 100 #
+validation_size = 25 #
+test_size = 5000 #
+data_name = 'grid' # 'mnist' # 'mnistdps4' # 'ocrdp1' # 'k_sparse'
 random_data = False
 
 ## General configs
