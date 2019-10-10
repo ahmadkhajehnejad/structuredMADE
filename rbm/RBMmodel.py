@@ -4,7 +4,7 @@ import rbm.pydeep.rbm.model as model
 import rbm.pydeep.rbm.trainer as trainer
 import rbm.pydeep.rbm.estimator as estimator
 import sys
-
+import copy
 
 class RBM:
     def __init__(self, train_data):
@@ -40,7 +40,8 @@ class RBM:
         print('Training')
         print('Epoch\t\tRecon. Error\tLog likelihood \tExpected End-Time')
         best_val_LL = -np.Inf
-        early_stop_cnt = 0
+        # early_stop_cnt = 0
+        best_rbm = None
         for epoch in range(1, config.num_of_epochs + 1):
 
             # Loop over all batches
@@ -54,13 +55,16 @@ class RBM:
             val_LL = np.mean(self.predict(validation_data))
             if val_LL > best_val_LL:
                 best_val_LL = val_LL
-                early_stop_cnt = 0
+                best_rbm = copy.deepcopy(self.rbm)
+                # early_stop_cnt = 0
+                is_the_best = 1
             else:
-                early_stop_cnt += 1
-            if early_stop_cnt > config.patience:
-                break
+                is_the_best = 0
+                # early_stop_cnt += 1
+            # if early_stop_cnt > config.patience:
+            #     break
 
-            print(epoch, '         best_val_LL:', best_val_LL, '     early_stop_cnt:', early_stop_cnt)
+            print(epoch, '         best_val_LL:', best_val_LL, '     is_the_best:', is_the_best)
 
             # Calculate reconstruction error and expected end time every 10th epoch
             #if epoch % 10 == 0:
@@ -71,6 +75,8 @@ class RBM:
             #    print(epoch, '         best_val_LL', best_val_LL)
 
         ####
+
+        self.rbm = best_rbm
 
         print('fit finish')
         sys.stdout.flush()
