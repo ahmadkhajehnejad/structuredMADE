@@ -33,11 +33,25 @@ class MMB:
         self.pi = self.pi / np.sum(self.pi)
         self.mu = np.random.rand(k*d).reshape([k,d])
 
+        best_val_LL = -np.Inf
+        best_pi = None
+        best_mu = None
 
         for iter in range(config.num_EMiters):
             print(' EM iter: ', iter)
             self._EM_step(train_data)
+            LL = np.mean(self.predict(validation_data))
+            is_the_best = False
+            if LL > best_val_LL:
+                best_val_LL = LL
+                best_pi = self.pi.copy()
+                best_mu = self.mu.copy()
+                is_the_best = True
+            print('               val_LL: ', LL, '   is_the_best: ', is_the_best)
 
+
+        self.pi = best_pi.copy()
+        self.mu = best_mu.copy()
         print('fit finish')
         sys.stdout.flush()
 
