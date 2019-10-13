@@ -59,7 +59,7 @@ def execute_one_round():
     
     model.fit(data['train_data'], data['valid_data'])
         
-    pred = model.predict(data['test_data'], verbose=True)
+    pred = model.predict(data['test_data'])
         
     res = dict()    
     res['NLL'], res['KL'] = evaluate(pred, data['test_data_probs'])

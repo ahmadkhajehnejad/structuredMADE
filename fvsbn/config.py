@@ -1,12 +1,27 @@
-train_size = 32152
-validation_size = 8000
+train_size = 100
+validation_size = 25
 test_size = 5000
-data_name = 'ocr' # 'mnist' # 'k_sparse' # 'grid' # 'mnistdps4' # 'ocrdp1' #
+data_name = 'k_sparse' # 'grid' # 'mnistdps4' # 'mnist' # 'ocrdp1' #
 random_data = False
+use_best_validated_weights = True
+from keras import optimizers
 
 number_of_permutations = 10
 
 ## General configs
+
+AE_adam = optimizers.Adam(lr=0.0003, beta_1=0.1)
+
+num_of_exec = 5
+fit_iter = 1
+num_of_epochs = 2000   #max number of epoch if not reaches the ES condition
+batch_size = 50
+optimizer = AE_adam
+patience = 20
+
+## General configs
+
+max_iter = 100
 
 generate_samples = False
 generated_samples_dir = './generated_samples/'
