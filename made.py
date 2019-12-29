@@ -403,7 +403,7 @@ class MADE:
 
         def normal_loss(y_true, y_pred):
             mu_pred, logVar_pred = y_pred[ :, :config.graph_size], y_pred[ :, config.graph_size:]
-            return K.sum( 0.5 * (y_true - mu_pred)**2 / K.exp(2*logVar_pred) + logVar_pred/2, axis=1)
+            return K.sum( 0.5 * (y_true - mu_pred)**2 / K.exp(logVar_pred) + logVar_pred/2, axis=1)
 
 
 
