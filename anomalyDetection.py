@@ -38,7 +38,7 @@ def test_for_digit(x, y, digit):
 
     if not os.path.exists('saved_models'):
         os.makedirs('saved_models')
-    model.save_weights('saved_models/'+'digit-'+ str(digit) + '.hdf5')
+    model.autoencoder.save_weights('saved_models/'+'digit-'+ str(digit) + '.hdf5')
 
     if not os.path.exists('saved_data'):
         os.makedirs('saved_data')

@@ -13,7 +13,7 @@ data_name = 'mnist' # ''grid' # 'mnistdps4' # 'binarized_mnist' # 'ocrdp1' # 'k_
 learn_alpha = False
 random_data = False
 use_best_validated_weights = True
-fast_train = False # True #
+fast_train = True # False #
 logReg_pretrain = False # True #         
 from keras import optimizers
 

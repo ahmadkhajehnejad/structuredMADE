@@ -2,6 +2,7 @@ import numpy as np
 from keras.models import Model
 from keras.layers import Input, Concatenate, Reshape
 import config
+import keras
 from keras import backend as K
 from made_utils import MaskedDenseLayer, MyEarlyStopping
 from dataset import get_data_structure
@@ -403,7 +404,9 @@ class MADE:
 
         def normal_loss(y_true, y_pred):
             mu_pred, logVar_pred = y_pred[ :, :config.graph_size], y_pred[ :, config.graph_size:]
-            return K.sum( 0.5 * (y_true - mu_pred)**2 / K.exp(logVar_pred) + logVar_pred/2, axis=1)
+            barrier = K.power( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 100 )
+
+            return K.sum( 0.5 * (y_true - mu_pred)**2 / K.exp(logVar_pred) + logVar_pred/2, axis=1) + barrier
 
 
 
