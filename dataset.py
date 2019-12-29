@@ -80,10 +80,10 @@ def get_data(args):
             args['valid_size'] = args['valid_size'] // 10
             args['test_size'] = args['test_size'] // 10
             
-            args['data_file'] = 'datasets/binary_mnist_'+ str(0) + '.npz'
+            args['data_file'] = 'datasets/mnist_'+ str(0) + '.npz'
             res = _get_data_from_file(args)
             for d in range(1,10):
-                args['data_file'] = 'datasets/binary_mnist_'+ str(d) + '.npz'
+                args['data_file'] = 'datasets/mnist_'+ str(d) + '.npz'
                 tmp = _get_data_from_file(args)
                 res['train_data'] = np.concatenate([res['train_data'], tmp['train_data']], axis=0)
                 res['valid_data'] = np.concatenate([res['valid_data'], tmp['valid_data']], axis=0)
@@ -96,12 +96,47 @@ def get_data(args):
             args['valid_size'] = va
             args['test_size'] = te
             
-            
             return res
         else:
             raise Exception("ERROR: mnist should not be run for just one digit")
             #args['data_file'] = 'datasets/binary_mnist_'+ str(args['digit']) + '.npz'
             #return _get_data_from_file(args)
+    elif args['data_name'].startswith('binarized_mnist'):
+        if args['digit'] == 'All':
+            tr = args['train_size']
+            va = args['valid_size']
+            te = args['test_size']
+            args['train_size'] = args['train_size'] // 10
+            args['valid_size'] = args['valid_size'] // 10
+            args['test_size'] = args['test_size'] // 10
+
+            args['data_file'] = 'datasets/binary_mnist_' + str(0) + '.npz'
+            res = _get_data_from_file(args)
+            res['train_labels'] = np.zeros([res['train_data'].shape[0]])
+            res['vaalidation_labels'] = np.zeros([res['validation_data'].shape[0]])
+            res['test_labels'] = np.zeros([res['test_data'].shape[0]])
+            for d in range(1, 10):
+                args['data_file'] = 'datasets/binary_mnist_' + str(d) + '.npz'
+                tmp = _get_data_from_file(args)
+                res['train_data'] = np.concatenate([res['train_data'], tmp['train_data']], axis=0)
+                res['valid_data'] = np.concatenate([res['valid_data'], tmp['valid_data']], axis=0)
+                res['test_data'] = np.concatenate([res['test_data'], tmp['test_data']], axis=0)
+                res['train_labels'] = np.concatenate([res['train_labels'], d*np.ones([res['train_data'].shape[0]])], axis=0)
+                res['train_labels'] = np.concatenate([res['train_labels'], d * np.ones([res['train_data'].shape[0]])],
+                                                     axis=0)
+            np.random.shuffle(res['train_data'])
+            np.random.shuffle(res['valid_data'])
+            np.random.shuffle(res['test_data'])
+
+            args['train_size'] = tr
+            args['valid_size'] = va
+            args['test_size'] = te
+
+            return res
+        else:
+            raise Exception("ERROR: mnist should not be run for just one digit")
+            # args['data_file'] = 'datasets/binary_mnist_'+ str(args['digit']) + '.npz'
+            # return _get_data_from_file(args)
     elif args['data_name'].startswith('ocr'):
         tr = args['train_size']
         va = args['valid_size']
@@ -171,10 +206,12 @@ def get_data_structure():
                     adj[jj-config.width][jj] = adj[jj][jj-config.width] = 1
         parameters['adjacency_matrix'] = adj
         
-    elif config.data_name.startswith('mnist') or config.data_name.startswith('ocr'):
+    elif config.data_name.startswith('binarized_mnist') or config.data_name.startswith('mnist') or config.data_name.startswith('ocr'):
         graph_size = config.graph_size
-        if config.data_name.startswith('mnistdps') or config.data_name.startswith('ocrdps'):
-            if config.data_name.startswith('mnistdps'):
+        if config.data_name.startswith('binarized_mnistdps') or config.data_name.startswith('mnistdps') or config.data_name.startswith('ocrdps'):
+            if config.data_name.startswith('binarized_mnistdps'):
+                dp = int(config.data_name[18:])
+            elif config.data_name.startswith('mnistdps'):
                 dp = int(config.data_name[8:])
             else:
                 dp = int(config.data_name[6:])
@@ -189,7 +226,9 @@ def get_data_structure():
                                 zz = (r+t_r)*config.width + (c+t_c)
                                 adj[jj,zz] = adj[zz,jj] = 1
             parameters['adjacency_matrix'] = adj
-        elif config.data_name.startswith('mnistdp') or config.data_name.startswith('ocrdp'):
+        elif config.data_name.startswith('binarized_mnistdp') or config.data_name.startswith('mnistdp') or config.data_name.startswith('ocrdp'):
+            if config.data_name.startswith('binarized_mnistdp'):
+                dp = int(config.data_name[17:])
             if config.data_name.startswith('mnistdp'):
                 dp = int(config.data_name[7:])
             else:

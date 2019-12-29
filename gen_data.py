@@ -42,7 +42,7 @@ def _sample_data_from_param_file(args):
             'prob_of_outcomes': prob_of_outcomes
             }
 
-def _gen_mnist_data(args):
+def _gen_binarized_mnist_data(args):
     #bmnist1 = np.load('datasets/binary_mnist_1.npz')
     special_digit = args['digit']
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -59,6 +59,23 @@ def _gen_mnist_data(args):
     #img = Image.fromarray(trd[154]*255)
     #img.show()
 
+
+def _gen_mnist_data(args):
+    special_digit = args['digit']
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    print('x_train.shape: ', x_train.shape)
+    trd = x_train[y_train == special_digit]/255.0
+    np.random.shuffle(trd)
+    #train_data = np.reshape(trd[:,7:21,7:21], (trd.shape[0], 14*14))
+    train_data = np.reshape(trd, (trd.shape[0], -1))
+    ted = x_test[y_test == special_digit]/255.0
+    np.random.shuffle(ted)
+    #test_data = np.reshape(ted[:,7:21,7:21], (ted.shape[0], 14*14))
+    test_data = np.reshape(ted, (ted.shape[0], -1))
+    return {'train_data' : train_data,
+            'test_data' : test_data}
+    #img = Image.fromarray(trd[154]*255)
+    #img.show()
 
 def _gen_ocr_data(args):
     with open('datasets/letter.data', 'r') as fin:
@@ -93,13 +110,20 @@ def gen_data(args):
         args['parameters_file'] = 'dataset_parameters/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '_parameters.npz'
         dt = _sample_data_from_param_file(args)
         dest_file = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
+    elif args['data_name'] == 'binarized_mnist':
+        dt = _gen_binarized_mnist_data(args)
+        dt['all_outcomes'] = None
+        dt['prob_of_outcomes'] = None
+        dt['train_data_probs'] = None
+        dt['test_data_probs'] = None
+        dest_file = 'datasets/binary_mnist_' + str(args['digit']) + '.npz'
     elif args['data_name'] == 'mnist':
         dt = _gen_mnist_data(args)
         dt['all_outcomes'] = None
         dt['prob_of_outcomes'] = None
         dt['train_data_probs'] = None
         dt['test_data_probs'] = None
-        dest_file = 'datasets/binary_mnist_' + str(args['digit']) + '.npz'
+        dest_file = 'datasets/mnist_' + str(args['digit']) + '.npz'
     elif args['data_name'] == 'ocr':
         dt = _gen_ocr_data(args)
         dt['all_outcomes'] = None
@@ -143,12 +167,13 @@ def gen_data(args):
 #gen_data({'data_name' : 'Boltzmann', 'n' : 10, 'm' : 10, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'rcv1'})
-'''
+
 for d in range(10):
     print(d)
     gen_data({'data_name' : 'mnist', 'digit' : d})
-'''
+
 #gen_data({'data_name' : 'BayesNet', 'n' : 100, 'par_num' : 5, 'train_size' : 20000, 'test_size' : 20000})
-for i in range(26):
-    print(i)
-    gen_data({'data_name' : 'ocr', 'ascii' : i})
+
+# for i in range(26):
+#     print(i)
+#     gen_data({'data_name' : 'ocr', 'ascii' : i})
