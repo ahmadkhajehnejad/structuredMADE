@@ -474,7 +474,7 @@ class MADE:
             made_predict_mu = made_predict[ :, :config.graph_size]
             made_predict_logVar = made_predict[ :, config.graph_size:]
 
-            made_pred_logVar = K.log(K.exp(made_pred_logVar) + MIN_LOGVAR)
+            made_predict_logVar = K.log(K.exp(made_predict_logVar) + MIN_LOGVAR)
 
             log_probs = -0.5 * (test_data - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2
 
