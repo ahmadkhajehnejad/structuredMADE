@@ -54,8 +54,11 @@ def main():
 
     x = x.reshape([x.shape[0],-1])/255.0
 
+    np.random.shuffle(x)
+    np.random.shuffle(y)
+
     for digit in range(10):
-        test_for_digit(x, y, digit)
+        test_for_digit(x.copy(), y.copy(), digit)
 
 
 
