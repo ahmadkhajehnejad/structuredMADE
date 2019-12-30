@@ -10,6 +10,7 @@ from sklearn.metrics import precision_recall_curve, average_precision_score
 
 
 if __name__ == '__main__':
+    avg_precision = []
     auprc = []
     for digit in range(10):
         with open('saved_data/digit-' + str(digit) + '-test_data.pkl', 'rb') as fin:
@@ -17,5 +18,11 @@ if __name__ == '__main__':
         model = MADE()
         model.autoencoder.load_weights('saved_models/' + 'digit-' + str(digit) + '.hdf5')
         pred_log_probs = model.predict(x_test)
-        auprc.append(precision_recall_curve(y_test.reshape([-1]), pred_log_probs.reshape([-1])))
-        print(digit, ': ', auprc[-1])
+        with open('saved_data/digit-' + str(digit) + '-pred.pkl', 'wb') as fout:
+            pickle.dump(pred_log_probs, fout)
+        #with open('saved_data/digit-' + str(digit) + '-pred.pkl', 'rb') as fin:
+        #    pred_log_probs = pickle.load(fin)
+        avg_precision.append(average_precision_score(y_test.reshape([-1]), pred_log_probs.reshape([-1])))
+        [precisions, recalls, thresholds] = precision_recall_curve(y_test.reshape([-1]), pred_log_probs.reshape([-1]))
+        auprc.append( np.sum ( (precisions[:-1] + precisions[1:]) * (recalls[:-1] - recalls[1:]) / 2 ) )
+        print(digit, ' avg_pr: ', avg_precision[-1], '   auc: ', auprc[-1])
