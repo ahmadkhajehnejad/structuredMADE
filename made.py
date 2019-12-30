@@ -487,7 +487,7 @@ class MADE:
 
 
         #res = np.log(np.mean(probs, axis=0))
-        res = logsumexp(log_probs, axis=0) - np.log(config.num_of_all_masks)
+        res = logsumexp(all_masks_log_probs, axis=0) - np.log(config.num_of_all_masks)
         print('predict finish')
         return res
 
