@@ -404,9 +404,11 @@ class MADE:
 
         def normal_loss(y_true, y_pred):
             mu_pred, logVar_pred = y_pred[ :, :config.graph_size], y_pred[ :, config.graph_size:]
-            barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 100 )
+            # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
 
-            return K.sum( 0.5 * (y_true - mu_pred)**2 / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
+            # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
+            logVar_pred = K.log(K.exp(logVar_pred) + 0.0001)
+            return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2, axis=1)
 
 
 
