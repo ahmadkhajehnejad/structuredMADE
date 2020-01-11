@@ -1,6 +1,7 @@
 import numpy as np
 import config
 import h5py
+from PIL import Image
 
 def _get_data_from_file(args):
     
@@ -169,6 +170,56 @@ def get_data(args):
         args['test_size'] = te
 
         return res
+    elif args['data_name'].startswith('celebA'):
+        tr = args['train_size']
+        va = args['valid_size']
+        te = args['test_size']
+
+        num_all_images = 202599
+        if config.random_data:
+            dt_ind = np.load('datasets/celebA/rndprm.np')
+        else:
+            dt_ind = np.random.permutation(num_all_images)
+
+        train_data = []
+        for i in range(tr):
+            filename = str(dt_ind[i] + 1)
+            while len(filename) < 6:
+                filename = '0' + filename
+            img = np.asarray(Image.open(filename)) / 255
+            train_data.append(img.reshape([-1]))
+        train_data = np.array(train_data)
+
+        valid_data = []
+        for i in range(va):
+            filename = str(dt_ind[tr + i] + 1)
+            while len(filename) < 6:
+                filename = '0' + filename
+            img = np.asarray(Image.open(filename)) / 255
+            valid_data.append(img.reshape([-1]))
+        valid_data = np.array(valid_data)
+
+        test_data = []
+        for i in range(te):
+            filename = str(dt_ind[tr + va + i] + 1)
+            while len(filename) < 6:
+                filename = '0' + filename
+            img = np.asarray(Image.open(filename)) / 255
+            test_data.append(img.reshape([-1]))
+        test_data = np.array(test_data)
+
+        np.random.shuffle(train_data)
+        np.random.shuffle(valid_data)
+        np.random.shuffle(test_data)
+
+
+        return {'train_data': train_data,
+                'train_data_probs': None,
+                'valid_data': valid_data,
+                'valid_data_probs': None,
+                'test_data': test_data,
+                'test_data_probs': None}
+
     elif args['data_name'] == 'k_sparse':
         args['data_file'] = 'datasets/k_sparse_' + str(args['n']) + '_' + str(args['sparsity_degree']) + '.npz'
         return _get_data_from_file(args)
@@ -205,14 +256,18 @@ def get_data_structure():
                 if r > 0:
                     adj[jj-config.width][jj] = adj[jj][jj-config.width] = 1
         parameters['adjacency_matrix'] = adj
-        
-    elif config.data_name.startswith('binarized_mnist') or config.data_name.startswith('mnist') or config.data_name.startswith('ocr'):
+
+    elif config.data_name.startswith('binarized_mnist') or config.data_name.startswith(
+        'mnist') or config.data_name.startswith('ocr') or config.data_name.startswith('celebA'):
         graph_size = config.graph_size
-        if config.data_name.startswith('binarized_mnistdps') or config.data_name.startswith('mnistdps') or config.data_name.startswith('ocrdps'):
+        if config.data_name.startswith('binarized_mnistdps') or config.data_name.startswith('mnistdps') \
+            or config.data_name.startswith('ocrdps') or config.data_name.startswith('celebAdps'):
             if config.data_name.startswith('binarized_mnistdps'):
                 dp = int(config.data_name[18:])
             elif config.data_name.startswith('mnistdps'):
                 dp = int(config.data_name[8:])
+            elif config.data_name.startswith('celebAdps'):
+                dp = int(config.data_name[9:])
             else:
                 dp = int(config.data_name[6:])
             adj = np.zeros([graph_size, graph_size])
@@ -226,11 +281,14 @@ def get_data_structure():
                                 zz = (r+t_r)*config.width + (c+t_c)
                                 adj[jj,zz] = adj[zz,jj] = 1
             parameters['adjacency_matrix'] = adj
-        elif config.data_name.startswith('binarized_mnistdp') or config.data_name.startswith('mnistdp') or config.data_name.startswith('ocrdp'):
+        elif config.data_name.startswith('binarized_mnistdp') or config.data_name.startswith('mnistdp') \
+            or config.data_name.startswith('ocrdp') or config.data_name.startswith('celebAdp'):
             if config.data_name.startswith('binarized_mnistdp'):
                 dp = int(config.data_name[17:])
-            if config.data_name.startswith('mnistdp'):
+            elif config.data_name.startswith('mnistdp'):
                 dp = int(config.data_name[7:])
+            elif config.data_name.startswith('celebAdp'):
+                dp = int(config.data_name[8:])
             else:
                 dp = int(config.data_name[5:])
             adj = np.zeros([graph_size, graph_size])
