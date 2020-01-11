@@ -175,9 +175,11 @@ def get_data(args):
         va = args['valid_size']
         te = args['test_size']
 
+        celebA_dataset_path = './datasets/celebA/'
+
         num_all_images = 202599
         if config.random_data:
-            dt_ind = np.load('datasets/celebA/rndprm.np')
+            dt_ind = np.load(celebA_dataset_path + 'rndprm.np')
         else:
             dt_ind = np.random.permutation(num_all_images)
 
@@ -186,7 +188,7 @@ def get_data(args):
             filename = str(dt_ind[i] + 1)
             while len(filename) < 6:
                 filename = '0' + filename
-            img = np.asarray(Image.open(filename)) / 255
+            img = np.asarray(Image.open(celebA_dataset_path + filename)) / 255
             train_data.append(img.reshape([-1]))
         train_data = np.array(train_data)
 
@@ -195,7 +197,7 @@ def get_data(args):
             filename = str(dt_ind[tr + i] + 1)
             while len(filename) < 6:
                 filename = '0' + filename
-            img = np.asarray(Image.open(filename)) / 255
+            img = np.asarray(Image.open(celebA_dataset_path + filename)) / 255
             valid_data.append(img.reshape([-1]))
         valid_data = np.array(valid_data)
 
@@ -204,7 +206,7 @@ def get_data(args):
             filename = str(dt_ind[tr + va + i] + 1)
             while len(filename) < 6:
                 filename = '0' + filename
-            img = np.asarray(Image.open(filename)) / 255
+            img = np.asarray(Image.open(celebA_dataset_path + filename)) / 255
             test_data.append(img.reshape([-1]))
         test_data = np.array(test_data)
 
