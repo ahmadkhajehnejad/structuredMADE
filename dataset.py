@@ -179,7 +179,7 @@ def get_data(args):
 
         num_all_images = 202599
         if config.random_data:
-            dt_ind = np.load(celebA_dataset_path + 'rndprm.np')
+            dt_ind = np.load(celebA_dataset_path + 'rndprm.npy')
         else:
             dt_ind = np.random.permutation(num_all_images)
 

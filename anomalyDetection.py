@@ -5,6 +5,7 @@ import os
 import tensorflow as tf
 from keras import backend as K
 import pickle
+import argparse
 
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth = True
@@ -47,6 +48,11 @@ def test_for_digit(x, y, digit):
 
 def main():
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--digit', help='The digit you want to take as anomaly.', action='store', type=int, default=0)
+    args = parser.parse_args()
+
+
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
     x = np.concatenate([x_train, x_test], axis=0)
@@ -57,8 +63,7 @@ def main():
     np.random.shuffle(x)
     np.random.shuffle(y)
 
-    for digit in range(10):
-        test_for_digit(x.copy(), y.copy(), digit)
+    test_for_digit(x.copy(), y.copy(), args.digit)
 
 
 
