@@ -74,7 +74,7 @@ def execute_one_round(round_num):
 
     if config.generate_samples:
         n = config.num_of_generated_samples_each_execution
-        generated_samples = model.generate(n).reshape(n, config.height, config.width)
+        generated_samples = model.generate(n).reshape(n, config.height, -1, 3)
         for i in range(n):
             im = Image.fromarray(255*generated_samples[i,:,:])
             im.convert('RGB').save(config.generated_samples_dir + str(round_num) + '--' + str(i)+'.png')
