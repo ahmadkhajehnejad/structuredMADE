@@ -31,6 +31,12 @@ if data_name.startswith('mnist'):
     digit = 'All'
     graph_size = width * height
 
+## celebA configs
+if data_name.startswith('celebA'):
+    width = 178 * 3
+    height = 218
+    graph_size = width * height
+
 # Boltsmann configs
 if data_name == 'Boltzmann':
     n_boltzmann = 10
