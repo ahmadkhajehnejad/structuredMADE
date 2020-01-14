@@ -28,7 +28,7 @@ def evaluate(pred_log_probs, true_probs=None):
     return [NLL, None]
     
 
-def execute_one_round():
+def execute_one_round(round_num):
     
     args = {'data_name' : config.data_name, 'train_size' : config.train_size, 'valid_size' : config.validation_size, 'test_size' : config.test_size}
     if args['data_name'] == 'grid':
@@ -77,7 +77,7 @@ def execute_one_round():
         generated_samples = model.generate(n).reshape(n, config.height, config.width)
         for i in range(n):
             im = Image.fromarray(255*generated_samples[i,:,:])
-            im.convert('RGB').save(config.generated_samples_dir+str(i)+'.png')
+            im.convert('RGB').save(config.generated_samples_dir + str(round_num) + '--' + str(i)+'.png')
     return res
     
     
@@ -94,7 +94,7 @@ def main():
     for ne in range(0, config.num_of_exec):
         print('execution #' + str(ne), file=sys.stderr)
         sys.stderr.flush()
-        res = execute_one_round()
+        res = execute_one_round(ne)
         NLLs.append(res['NLL'])
         KLs.append(res['KL'])
         num_of_connections.append(res['num_of_connections'])

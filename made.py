@@ -18,7 +18,7 @@ from scipy.misc import logsumexp
 from sklearn.linear_model import LogisticRegression
 
 
-MIN_LOGVAR = 0.0001
+MIN_VAR = 0.0001
 
 def _spread(current_node, root_node, visited, adj, pi):
         visited[current_node]=True
@@ -409,7 +409,7 @@ class MADE:
             # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
 
             # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
-            logVar_pred = K.log(K.exp(logVar_pred) + MIN_LOGVAR)
+            logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
             return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2, axis=1)
 
 
@@ -474,7 +474,7 @@ class MADE:
             made_predict_mu = made_predict[ :, :config.graph_size]
             made_predict_logVar = made_predict[ :, config.graph_size:]
 
-            made_predict_logVar = np.log(np.exp(made_predict_logVar) + MIN_LOGVAR)
+            made_predict_logVar = np.log(np.exp(made_predict_logVar) + MIN_VAR)
 
             log_probs = -0.5 * (test_data - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2
 
@@ -499,7 +499,7 @@ class MADE:
             ind = (all_pi_nparray[mask_index,:] == i)
             pred = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])
             mu = pred[ :, :config.graph_size][ind]
-            logVar = pred[ :, config.graph_size:][ind]
+            logVar = np.log(np.exp(pred[ :, config.graph_size:][ind]) + MIN_VAR)
             generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
         return generated_samples
 
