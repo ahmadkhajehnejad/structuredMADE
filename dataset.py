@@ -178,6 +178,8 @@ def get_data(args):
         celebA_dataset_path = './datasets/celebA/'
 
         num_all_images = 202599
+        new_size = config.new_size
+
         if config.random_data:
             dt_ind = np.load(celebA_dataset_path + 'rndprm.npy')
         else:
@@ -188,7 +190,7 @@ def get_data(args):
             filename = str(dt_ind[i] + 1)
             while len(filename) < 6:
                 filename = '0' + filename
-            img = np.asarray(Image.open(celebA_dataset_path + filename)) / 255
+            img = np.asarray(Image.open(celebA_dataset_path + filename + '.jpg').resize(new_size)) / 255
             train_data.append(img.reshape([-1]))
         train_data = np.array(train_data)
 
@@ -197,7 +199,7 @@ def get_data(args):
             filename = str(dt_ind[tr + i] + 1)
             while len(filename) < 6:
                 filename = '0' + filename
-            img = np.asarray(Image.open(celebA_dataset_path + filename)) / 255
+            img = np.asarray(Image.open(celebA_dataset_path + filename + '.jpg').resize(new_size)) / 255
             valid_data.append(img.reshape([-1]))
         valid_data = np.array(valid_data)
 
@@ -206,14 +208,13 @@ def get_data(args):
             filename = str(dt_ind[tr + va + i] + 1)
             while len(filename) < 6:
                 filename = '0' + filename
-            img = np.asarray(Image.open(celebA_dataset_path + filename)) / 255
+            img = np.asarray(Image.open(celebA_dataset_path + filename + '.jpg').resize(new_size)) / 255
             test_data.append(img.reshape([-1]))
         test_data = np.array(test_data)
 
         np.random.shuffle(train_data)
         np.random.shuffle(valid_data)
         np.random.shuffle(test_data)
-
 
         return {'train_data': train_data,
                 'train_data_probs': None,
@@ -233,7 +234,6 @@ def get_data(args):
         return _get_data_from_file(args)
     else:
         return None
-
 
 def make_hdf5(args, filename):
     data = get_data(args)
