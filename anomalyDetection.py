@@ -14,21 +14,21 @@ sess = tf.Session(config=tf_config)
 K.set_session(sess)
 
 
-def load_cifar_data(normal_class, data_protocol):
+def load_cifar_data():
 
     x_1 = []
     y_1 = []
     for i in range(1, 6):
-        with open('datasets/cifar-10-batches-py/data_batch_{}'.format(i), 'rb') as fin:
+        with open('datasets/cifar-10-python/cifar-10-batches-py/data_batch_{}'.format(i), 'rb') as fin:
             data_dict = pickle.load(fin, encoding='bytes')
         if i == 1:
             x_1 = data_dict[b'data']
             y_1 = np.array(data_dict[b'labels'])
         else:
-            x_1 = np.concatenate([x_1, data_dict[b'data']], axis=1)
+            x_1 = np.concatenate([x_1, data_dict[b'data']], axis=0)
             y_1 = np.concatenate([y_1, np.array(data_dict[b'labels'])], axis=0)
 
-    with open('datasets/cifar-10-batches-py/test_batch', 'rb') as fin:
+    with open('datasets/cifar-10-python/cifar-10-batches-py/test_batch', 'rb') as fin:
         data_dict = pickle.load(fin, encoding='bytes')
     x_2 = data_dict[b'data']
     y_2 = np.array(data_dict[b'labels'])
@@ -118,6 +118,10 @@ def main():
         x_2 = x_2.reshape([x_2.shape[0], -1])
     else:
         (x_1, y_1), (x_2, y_2) = load_cifar_data()
+        x_1 = np.transpose( x_1.reshape([-1,3,32,32]), (0,2,3,1))
+        x_1 = x_1.reshape([x_1.shape[0], -1])
+        x_2 = np.transpose( x_2.reshape([-1,3,32,32]), (0,2,3,1))
+        x_2 = x_2.reshape([x_2.shape[0], -1])
 
     (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = partition_data(x_1, y_1, x_2, y_2, normal_class, data_protocol)
 
