@@ -114,6 +114,8 @@ def main():
 
     if config.data_name.startswith('mnist'):
         (x_1, y_1), (x_2, y_2) = mnist.load_data()
+        x_1 = x_1.reshape([x_1.shape[0], -1])
+        x_2 = x_2.reshape([x_2.shape[0], -1])
     else:
         (x_1, y_1), (x_2, y_2) = load_cifar_data()
 
