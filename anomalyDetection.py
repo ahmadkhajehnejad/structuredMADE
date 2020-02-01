@@ -100,7 +100,7 @@ def partition_data(x_1, y_1, x_2, y_2, normal_class, data_protocol):
         x_test = x_2
         y_test = y_2
 
-    return (x_train, y_train), (x_validation, y_validation), (x_test, y_test)
+    return (x_train / 255, y_train), (x_validation / 255, y_validation), (x_test / 255, y_test)
 
 def main():
 
