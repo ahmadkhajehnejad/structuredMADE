@@ -6,6 +6,7 @@ import tensorflow as tf
 from keras import backend as K
 import pickle
 import argparse
+import config
 
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth = True
@@ -13,58 +14,125 @@ sess = tf.Session(config=tf_config)
 K.set_session(sess)
 
 
-def test_for_digit(x, y, digit):
+def load_cifar_data(normal_class, data_protocol):
 
-    ind_digit = np.where(y == digit)[0]
-    ind_other_digits = np.where(y != digit)[0]
+    x_1 = []
+    y_1 = []
+    for i in range(1, 6):
+        with open('datasets/cifar-10-batches-py/data_batch_{}'.format(i), 'rb') as fin:
+            data_dict = pickle.load(fin, encoding='bytes')
+        if i == 1:
+            x_1 = data_dict[b'data']
+            y_1 = np.array(data_dict[b'labels'])
+        else:
+            x_1 = np.concatenate([x_1, data_dict[b'data']], axis=1)
+            y_1 = np.concatenate([y_1, np.array(data_dict[b'labels'])], axis=0)
 
-    n_train = 9*5600
-    ind_train = np.random.choice(ind_other_digits, n_train, replace=False)
-    ind_test_other_digits = list(set(ind_other_digits).difference(ind_train))
-    ind_test = np.concatenate([ind_digit, ind_test_other_digits])
+    with open('datasets/cifar-10-batches-py/test_batch', 'rb') as fin:
+        data_dict = pickle.load(fin, encoding='bytes')
+    x_2 = data_dict[b'data']
+    y_2 = np.array(data_dict[b'labels'])
 
-    x_train = x[ind_train,:]
-    x_test = x[ind_test,:]
-    y_test = np.concatenate([np.zeros([len(ind_digit)]), np.ones([len(ind_test_other_digits)])])
+    return (x_1, y_1) , (x_2, y_2)
 
-    n_validation = int(n_train / 10)
-    x_validation = x_train[:n_validation,:]
-    x_train = x_train[n_validation:,:]
+def partition_data(x_1, y_1, x_2, y_2, normal_class, data_protocol):
+    if data_protocol == 0:
+        anomaly_class = normal_class   ## In this protocol, a specific class is assumed as the anomaly class.
+        x = np.concatenate([x_1, x_2], axis=0)
+        y = np.concatenate([y_1, y_2], axis=0)
+        ind_anomaly = np.where(y == anomaly_class)[0]
+        ind_normal = np.where(y != anomaly_class)[0]
 
-    model = MADE()
+        num_classes = np.max(y) + 1
 
-    print('model initiated')
+        n_train = int(0.8*ind_normal.size)
+        ind_train = np.random.choice(ind_normal, n_train, replace=False)
+        ind_test_other_classes = list(set(ind_normal).difference(ind_train))
+        ind_test = np.concatenate([ind_anomaly, ind_test_other_classes])
 
-    model.fit(x_train, x_validation)
+        x_train = x[ind_train,:]
+        y_train = y[ind_train]
+        x_test = x[ind_test,:]
+        y_test = y[ind_test]
+        # y_test = np.concatenate([np.zeros([len(ind_anomaly)]), np.ones([len(ind_test_other_classes)])])
 
-    if not os.path.exists('saved_models'):
-        os.makedirs('saved_models')
-    model.autoencoder.save_weights('saved_models/'+'digit-'+ str(digit) + '.hdf5')
+        n_validation = int(n_train / 10)
+        x_validation = x_train[:n_validation,:]
+        y_validation = y_train[:n_validation]
+        x_train = x_train[n_validation:,:]
+        y_train = y_train[n_validation:]
 
-    if not os.path.exists('saved_data'):
-        os.makedirs('saved_data')
-    with open('saved_data/digit-'+str(digit)+'-test_data.pkl', 'wb') as fout:
-        pickle.dump([x_test, y_test], fout)
+    elif data_protocol == 1:
+        inds = np.random.permutation(x_1.shape[0] + x_2.shape[0])
+        x = np.concatenate([x_1, x_2], axis=0)[inds]
+        y = np.concatenate([y_1, y_2], axis=0)[inds]
+
+        inds_normal = np.where(y == normal_class)[0]
+        inds_anomaly = np.where(y != normal_class)[0]
+
+        n_normal_total = inds_normal.size
+        n_train_and_validation = int(n_normal_total * 0.8)
+        half_n_test = n_normal_total - n_train_and_validation
+        n_train = int(n_train_and_validation * 0.8)
+        n_validation = n_train_and_validation - n_train
+
+        x_train = x[inds_normal][:n_train]
+        y_train = y[inds_normal][:n_train]
+        x_validation = x[inds_normal][n_train:n_train + n_validation]
+        y_validation = y[inds_normal][n_train:n_train + n_validation]
+        x_test = np.concatenate([x[inds_normal][n_train + n_validation:], x[inds_anomaly][:half_n_test]], axis=0)
+        y_test = np.concatenate([y[inds_normal][n_train + n_validation:], y[inds_anomaly][:half_n_test]])
+
+    elif data_protocol == 2:
+        inds_normal_1 = np.where(y_1 == normal_class)[0]
+        x_1 = x_1[inds_normal_1]
+        y_1 = y_1[inds_normal_1]
+        n_train_and_validation = inds_normal_1.size
+        n_train = int(n_train_and_validation * 0.8)
+        inds = np.random.permutation(n_train_and_validation)
+        x_1 = x_1[inds]
+        y_1 = y_1[inds]
+
+        x_train = x_1[:n_train]
+        y_train = y_1[:n_train]
+        x_validation = x_1[n_train:]
+        y_validation = y_1[n_train:]
+        x_test = x_2
+        y_test = y_2
+
+    return (x_train, y_train), (x_validation, y_validation), (x_test, y_test)
 
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--digit', help='The digit you want to take as anomaly.', action='store', type=int, default=0)
+    parser.add_argument('-nc', '--normal_class', help='The class you want to take as anomaly.', action='store', type=int, default=0)
+    parser.add_argument('-dp', '--data_protocol', type=int, default=1, help='protocol for train/test partitioning.')
     args = parser.parse_args()
 
+    normal_class = args.normal_class
+    data_protocol = args.data_protocol
 
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    if config.data_name.startswith('mnist'):
+        (x_1, y_1), (x_2, y_2) = mnist.load_data()
+    else:
+        (x_1, y_1), (x_2, y_2) = load_cifar_data()
 
-    x = np.concatenate([x_train, x_test], axis=0)
-    y = np.concatenate([y_train, y_test], axis=0)
+    (x_train, y_train), (x_validation, y_validation), (x_test, y_test) = partition_data(x_1, y_1, x_2, y_2, normal_class, data_protocol)
 
-    x = x.reshape([x.shape[0],-1])/255.0
+    model = MADE()
 
-    np.random.shuffle(x)
-    np.random.shuffle(y)
+    print('model initiated')
+    model.fit(x_train, x_validation)
 
-    test_for_digit(x.copy(), y.copy(), args.digit)
+    if not os.path.exists('saved_models'):
+        os.makedirs('saved_models')
+    model.autoencoder.save_weights('saved_models/' + 'digit-' + str(normal_class) + '.hdf5')
 
+
+    if not os.path.exists('saved_data'):
+        os.makedirs('saved_data')
+    with open('saved_data/digit-' + str(normal_class) + '-test_data.pkl', 'wb') as fout:
+        pickle.dump([x_test, y_test], fout)
 
 
 if __name__ == '__main__':
