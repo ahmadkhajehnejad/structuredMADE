@@ -1,7 +1,7 @@
 import numpy as np
 from made import MADE
 import pickle
-from sklearn.metrics import precision_recall_curve, average_precision_score
+from sklearn.metrics import precision_recall_curve, average_precision_score, roc_auc_score
 import argparse
 
 # tf_config = tf.ConfigProto()
@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-nc', '--normal_class', help='The digit you want to take as anomaly.', action='store', type=int, default=0)
     parser.add_argument('-dp', '--data_protocol', type=int, default=1, help='protocol for train/test partitioning.')
+    parser.add_argument('-cvt', '--curve_type', type=int, default=0, help='Curve type: 0 for AUPRC and 1 for ROC-AUC.')
     args = parser.parse_args()
 
     data_protocol = args.data_protocol
@@ -39,7 +40,13 @@ if __name__ == '__main__':
     else:
         y_binary = np.array(y_test == normal_class, dtype=np.int)
 
-    avg_precision.append(average_precision_score(y_binary.reshape([-1]), pred_log_probs.reshape([-1])))
-    [precisions, recalls, thresholds] = precision_recall_curve(y_binary.reshape([-1]), pred_log_probs.reshape([-1]))
-    auprc.append( np.sum ( (precisions[:-1] + precisions[1:]) * (recalls[:-1] - recalls[1:]) / 2 ) )
-    print(normal_class, ' avg_pr: ', avg_precision[-1], '   auc: ', auprc[-1])
+    if args.curve_type == 0:
+        avg_precision.append(average_precision_score(y_binary.reshape([-1]), pred_log_probs.reshape([-1])))
+        [precisions, recalls, thresholds] = precision_recall_curve(y_binary.reshape([-1]), pred_log_probs.reshape([-1]))
+        auprc.append( np.sum ( (precisions[:-1] + precisions[1:]) * (recalls[:-1] - recalls[1:]) / 2 ) )
+        print(normal_class, ' avg_pr: ', avg_precision[-1], '   auc: ', auprc[-1])
+    elif args.curve_type == 1:
+        auroc = roc_auc_score(y_binary, pred_log_probs.reshape([-1]))
+        print(auroc)
+    else:
+        raise Exception('not implemented curve type ', args.curve_type)
