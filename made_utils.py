@@ -38,10 +38,19 @@ class MaskedDenseLayer(Layer):
         bs = K.shape(x)[0]
         ks = K.shape(self.kernel)
 
-        tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(state,[-1]))
-        masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
-        output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
-        output = K.reshape(output,[bs,self.output_dim]) + K.tile(self.b_0, [bs, 1])
+        # tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(state,[-1]))
+        # masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
+        # output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
+        # output = K.reshape(output,[bs,self.output_dim]) + K.tile(self.b_0, [bs, 1])
+
+        out = []
+        for i in range(bs):
+            tmp_mask = self._mask[state[i],:]
+            tmp_mask_bin = tf.mod(tf.bitwise.right_shift(tf.expand_dims(tmp_mask, 1), tf.range(ks[1])), 2)
+            masked = tf.multiply(self.kernel, tmp_mask_bin)
+            out.append( tf.reshape( tf.matmul(K.reshape(x[i,:], [1,ks[0]]), masked), [1,-1]) )
+        output = tf.concat(out, axis=0)
+
         return self._activation(output) 
 
     def compute_output_shape(self, input_shape):

@@ -16,7 +16,7 @@ if config.use_multiprocessing:
 #import sys
 from scipy.misc import logsumexp
 from sklearn.linear_model import LogisticRegression
-
+from functools import reduce
 
 MIN_VAR = 0.0001
 
@@ -153,10 +153,13 @@ class MADE:
         for i in range(config.num_of_hlayer+1):
             swapped_masks = []
             for j in range(config.num_of_all_masks):
-                swapped_masks.append(all_masks[j][i])
+                # swapped_masks.append(all_masks[j][i])
+                swapped_masks.append( reduce(lambda a, b: 2 * a + b, all_masks[j][i].T) )
             swapped_all_masks.append(swapped_masks)
+
             
         #all_masks = [[x*1.0 for x in y] for y in all_masks]
+
         return swapped_all_masks, all_pi
 
     def _Q_restricted_mask(self, pi, random_Q=False):
