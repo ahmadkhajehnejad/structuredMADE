@@ -47,7 +47,7 @@ class MaskedDenseLayer(Layer):
         cond = lambda i, out: tf.less(i, bs)
 
         def loop_body(i, output):
-            tmp_mask = tf.reshape( tf.gather(tf.constant(self._mask, dtype="int32"), state[i]), ks[0] )
+            tmp_mask = tf.reshape( tf.gather(tf.constant(self._mask, dtype="int32"), state[i]), [ks[0]] )
             tmp_mask_bin = tf.mod(tf.bitwise.right_shift(tf.expand_dims(tmp_mask, 1), tf.range(ks[1])), 2)
             masked = tf.multiply(self.kernel, tf.cast( tmp_mask_bin, dtype="float32"))
             new_output = tf.reshape(tf.matmul(K.reshape(x[i, :], [1, ks[0]]), masked), [1, -1])
@@ -56,7 +56,7 @@ class MaskedDenseLayer(Layer):
             else:
                 return tf.add(i,1), tf.concat([output, new_output], axis=0)
 
-        _, output = tf.while_loop(cond, loop_body, [i, tf.constant([])])
+        _, output = tf.while_loop(cond, loop_body, [i, tf.constant([])], parallel_iterations=1)
 
         return self._activation(output) 
 
