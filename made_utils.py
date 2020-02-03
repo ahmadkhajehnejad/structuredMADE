@@ -53,7 +53,8 @@ class MaskedDenseLayer(Layer):
             new_output = tf.reshape(tf.matmul(K.reshape(x[i, :], [1, ks[0]]), masked), [1, -1])
             return tf.add(i,1), tf.concat([output, new_output], axis=0)
 
-        _, output = tf.while_loop(cond, loop_body, [i, tf.reshape(tf.constant([], dtype="float32"), [0,ks[1]])], parallel_iterations=1)
+        _, output = tf.while_loop(cond, loop_body, [i, tf.reshape(tf.constant([], dtype="float32"),
+                                                                  [0,ks[1]])], parallel_iterations=1, shape_invariants=[i.get_shape(), tf.TensorShape([None, ks[1]])])
 
         return self._activation(output) 
 
