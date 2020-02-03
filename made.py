@@ -153,8 +153,8 @@ class MADE:
         for i in range(config.num_of_hlayer+1):
             swapped_masks = []
             for j in range(config.num_of_all_masks):
-                # swapped_masks.append(all_masks[j][i])
-                swapped_masks.append( reduce(lambda a, b: 2 * a + b, all_masks[j][i].T) )
+                swapped_masks.append(all_masks[j][i])
+                # swapped_masks.append( reduce(lambda a, b: 2 * a + b, all_masks[j][i].T) )
             swapped_all_masks.append(swapped_masks)
 
             
