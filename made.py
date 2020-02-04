@@ -398,11 +398,11 @@ class MADE:
             clayer_mu = Concatenate()([semiFinal_layer_mu, input_layer])
             clayer_logVar = Concatenate()([semiFinal_layer_sigma, input_layer])
             #clayer = input_layer
-            output_layer_mu = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [clayer_mu, state] )
-            output_layer_logVar = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_logVar, state])
+            output_layer_mu = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer_mu, state] )
+            output_layer_logVar = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')([clayer_logVar, state])
         else:
-            output_layer_mu = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_mu, state] )
-            output_layer_logVar = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_sigma, state])
+            output_layer_mu = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_mu, state] )
+            output_layer_logVar = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_sigma, state])
         output_layer = Concatenate()([output_layer_mu, output_layer_logVar])
         autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
 
