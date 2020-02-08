@@ -3,6 +3,7 @@ from made import MADE
 import pickle
 from sklearn.metrics import precision_recall_curve, average_precision_score, roc_auc_score
 import argparse
+import config
 
 # tf_config = tf.ConfigProto()
 # tf_config.gpu_options.allow_growth = True
@@ -28,7 +29,14 @@ if __name__ == '__main__':
 
     model = MADE()
     model.autoencoder.load_weights('saved_models/' + 'digit-' + str(normal_class) + '.hdf5')
-    pred_log_probs = model.predict(x_test)
+    i_ = 0
+    n_ = x_test.shape[0]
+    pred_probs = np.array([]).reshape([0, 1])
+    while i_ < n_:
+        j_ = min(i_ + config.batch_size, n_)
+        tmp = model.predict(x_test[i_:j_,:])
+        pred_log_probs = np.concat( [pred_log_probs, tmp], axis=0)
+        i_ = j_
     with open('saved_data/digit-' + str(normal_class) + '-pred.pkl', 'wb') as fout:
        pickle.dump(pred_log_probs, fout)
     # with open('saved_data/digit-' + str(normal_class) + '-pred.pkl', 'rb') as fin:
