@@ -31,11 +31,13 @@ if __name__ == '__main__':
     model.autoencoder.load_weights('saved_models/' + 'digit-' + str(normal_class) + '.hdf5')
     i_ = 0
     n_ = x_test.shape[0]
-    pred_probs = np.array([]).reshape([0, 1])
     while i_ < n_:
         j_ = min(i_ + config.batch_size, n_)
-        tmp = model.predict(x_test[i_:j_,:])
-        pred_log_probs = np.concat( [pred_log_probs, tmp], axis=0)
+        tmp = model.predict(x_test[i_:j_,:]).reshape([-1])
+        if i_ == 0:
+            pred_log_probs = tmp
+        else:
+            pred_log_probs = np.concatenate( [pred_log_probs, tmp], axis=0)
         i_ = j_
     with open('saved_data/digit-' + str(normal_class) + '-pred.pkl', 'wb') as fout:
        pickle.dump(pred_log_probs, fout)

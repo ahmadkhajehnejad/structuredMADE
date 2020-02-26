@@ -82,14 +82,18 @@ def _detect_subsets(labels_1, labels_2):
     
 
 class MADE:
-    def __init__(self):
+    def __init__(self, all_masks=None, all_pi=None):
         self.masking_method = config.algorithm
         if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related']) or \
                 (config.random_dimensions_order in ['bfs']) or \
                 (str(config.random_dimensions_order).endswith('bfs-random')):
             parameters = get_data_structure()
             self.adjacency_matrix = parameters['adjacency_matrix']
-        self.all_masks, self.all_pi = self.generate_all_masks()
+        if (all_masks is None) or (all_pi is None):
+            self.all_masks, self.all_pi = self.generate_all_masks()
+        else:
+            self.all_masks = all_masks.copy()
+            self.all_pi = all_pi.copy()
 
         #print('avg reaching sizes: ', np.mean(self.reaching_dimesions_num()))
 
