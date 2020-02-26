@@ -151,13 +151,3 @@ class MyEarlyStopping(Callback):
             self.model.set_weights(self.best_weights)
         if self.stopped_epoch > 0 and self.verbose > 0:
             print('Epoch %05d: early stopping' % (self.stopped_epoch + 1))
-
-
-def log_sum_exp(a, axis=0, keepdims=False):
-    mx = np.max( a, axis = axis, keepdims=keepdims)
-    tile_shape = np.ones([len(a.shape),], dtype=int)
-    tile_shape[axis] = a.shape[axis]
-    tmp_shape = [i for i in a.shape]
-    tmp_shape[axis] = 1
-    res = mx + np.log(np.sum( np.exp(a-np.tile(mx.reshape(tmp_shape),tile_shape)), axis=axis, keepdims=keepdims))
-    return res

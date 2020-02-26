@@ -17,6 +17,7 @@ if config.use_multiprocessing:
 from scipy.misc import logsumexp
 from sklearn.linear_model import LogisticRegression
 from functools import reduce
+from scipy.misc import logsumexp
 
 MIN_VAR = 0.0001
 
@@ -397,27 +398,53 @@ class MADE:
 
         semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')( [hlayer, state] )
         semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')( [hlayer, state] )
+        semiFinal_layer_pi = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')([hlayer, state])
+
+        list_output_layer_mu = []
+        list_output_layer_logVar = []
+        list_output_layer_logpi_unnormalized = []
 
         if config.direct_links:
             clayer_mu = Concatenate()([semiFinal_layer_mu, input_layer])
             clayer_logVar = Concatenate()([semiFinal_layer_sigma, input_layer])
-            #clayer = input_layer
-            output_layer_mu = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer_mu, state] )
-            output_layer_logVar = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')([clayer_logVar, state])
+            clayer_pi = Concatenate()([semiFinal_layer_pi, input_layer])
+            for i in range(config.num_Gaussian_components):
+                list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer_mu, state] ) )
+                list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_logVar, state]) )
+                list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_pi, state]))
         else:
-            output_layer_mu = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_mu, state] )
-            output_layer_logVar = MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_sigma, state])
-        output_layer = Concatenate()([output_layer_mu, output_layer_logVar])
+            for i in range(config.num_Gaussian_components):
+                list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_mu, state] ) )
+                list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_sigma, state]) )
+                list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_pi, state]) )
+
+
+
+        output_layer = Concatenate()(list_output_layer_mu + list_output_layer_logVar + list_output_layer_logpi_unnormalized)
         autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
 
 
         def normal_loss(y_true, y_pred):
-            mu_pred, logVar_pred = y_pred[ :, :config.graph_size], y_pred[ :, config.graph_size:]
-            # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
+            tmp_sz = config.num_Gaussian_components * config.graph_size
+            mu_pred, logVar_pred, logpi_unnormalized_pred = y_pred[:, :tmp_sz], y_pred[:, tmp_sz:2*tmp_sz], y_pred[:, 2*tmp_sz:]
 
-            # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
+            mu_pred = K.reshape(mu_pred, [-1, config.num_Gaussian_components, config.graph_size])
+            logVar_pred = K.reshape(logVar_pred, [-1, config.num_Gaussian_components, config.graph_size])
+            logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred, [-1, config.num_Gaussian_components, config.graph_size])
+            logpi_pred = logpi_unnormalized_pred - K.tile( K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_Gaussian_components, 1] )
+
             logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
-            return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2, axis=1)
+
+            y_true_tiled = K.tile( K.expand_dims(y_true, 1), [1,config.num_Gaussian_components,1] )
+
+            tmp = 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred / 2 + logpi_pred
+
+            tmp = K.logsumexp(tmp, axis=1)
+            return K.sum(tmp, axis=1)
+
+
+            # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
+            # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
 
 
 
@@ -478,12 +505,22 @@ class MADE:
         for j in range(config.num_of_all_masks):
             made_predict = self.autoencoder.predict([test_data, j * np.ones([test_size,1])])#.reshape(1, hlayer_size, graph_size)]
 
-            made_predict_mu = made_predict[ :, :config.graph_size]
-            made_predict_logVar = made_predict[ :, config.graph_size:]
+            tmp_sz = config.num_Gaussian_components * config.graph_size
+            made_predict_mu = made_predict[ :, :tmp_sz]
+            made_predict_logVar = made_predict[ :, tmp_sz:2*tmp_sz]
+            made_predict_logpi_unnormalized = made_predict[ :, 2*tmp_sz:]
+
+            made_predict_mu = np.reshape( made_predict_mu, [-1, config.num_Gaussian_components, config.graph_size] )
+            made_predict_logVar = np.reshape( made_predict_logVar, [-1, config.num_Gaussian_components, config.graph_size] )
+            made_predict_logpi_unnormalized = np.reshape( made_predict_logpi_unnormalized, [-1, config.num_Gaussian_components, config.graph_size] )
+            made_predict_logpi = made_predict_logpi_unnormalized - np.tile( logsumexp(made_predict_logpi_unnormalized, axis=1, keepdims=True), [1, config.num_Gaussian_components, 1] )
 
             made_predict_logVar = np.log(np.exp(made_predict_logVar) + MIN_VAR)
 
-            log_probs = -0.5 * (test_data - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2
+            test_data_tiled = np.tile( np.expand_dims(test_data, 1), [1, config.num_Gaussian_components, 1] )
+
+            tmp = -0.5 * (test_data_tiled - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2 + made_predict_logpi
+            log_probs = logsumexp(tmp, axis=1)
 
             # eps = 0.00001
             # log_probs[log_probs < np.log(eps)] = np.log(eps)
