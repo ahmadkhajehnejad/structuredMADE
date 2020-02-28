@@ -408,12 +408,12 @@ class MADE:
             clayer_mu = Concatenate()([semiFinal_layer_mu, input_layer])
             clayer_logVar = Concatenate()([semiFinal_layer_sigma, input_layer])
             clayer_pi = Concatenate()([semiFinal_layer_pi, input_layer])
-            for i in range(config.num_Gaussian_components):
+            for i in range(config.num_mixture_components):
                 list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer_mu, state] ) )
                 list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_logVar, state]) )
                 list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_pi, state]))
         else:
-            for i in range(config.num_Gaussian_components):
+            for i in range(config.num_mixture_components):
                 list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_mu, state] ) )
                 list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_sigma, state]) )
                 list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_pi, state]) )
@@ -425,17 +425,17 @@ class MADE:
 
 
         def normal_loss(y_true, y_pred):
-            tmp_sz = config.num_Gaussian_components * config.graph_size
+            tmp_sz = config.num_mixture_components * config.graph_size
             mu_pred, logVar_pred, logpi_unnormalized_pred = y_pred[:, :tmp_sz], y_pred[:, tmp_sz:2*tmp_sz], y_pred[:, 2*tmp_sz:]
 
-            mu_pred = K.reshape(mu_pred, [-1, config.num_Gaussian_components, config.graph_size])
-            logVar_pred = K.reshape(logVar_pred, [-1, config.num_Gaussian_components, config.graph_size])
-            logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred, [-1, config.num_Gaussian_components, config.graph_size])
-            logpi_pred = logpi_unnormalized_pred - K.tile( K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_Gaussian_components, 1] )
+            mu_pred = K.reshape(mu_pred, [-1, config.num_mixture_components, config.graph_size])
+            logVar_pred = K.reshape(logVar_pred, [-1, config.num_mixture_components, config.graph_size])
+            logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred, [-1, config.num_mixture_components, config.graph_size])
+            logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
 
             logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
 
-            y_true_tiled = K.tile( K.expand_dims(y_true, 1), [1,config.num_Gaussian_components,1] )
+            y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
 
             tmp = 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred / 2 + logpi_pred
 
@@ -446,9 +446,41 @@ class MADE:
             # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
             # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
 
+        def _logistic_cdf(y, mu, s):
+            y_altered = y + K.cast( y < 0, y.dtype) * -1000 + K.cast( y > 1, y.dtype) * 1000
+            return 1 / (1 + K.exp(-1*(y_altered - mu)/s))
+
+        def logistic_loss(y_true, y_pred):
+            tmp_sz = config.num_mixture_components * config.graph_size
+            mu_pred, logVar_pred, logpi_unnormalized_pred = y_pred[:, :tmp_sz], y_pred[:, tmp_sz:2 * tmp_sz], y_pred[:,
+                                                                                                              2 * tmp_sz:]
+
+            mu_pred = K.reshape(mu_pred, [-1, config.num_mixture_components, config.graph_size])
+            logVar_pred = K.reshape(logVar_pred, [-1, config.num_mixture_components, config.graph_size])
+            logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred,
+                                                [-1, config.num_mixture_components, config.graph_size])
+            logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True),
+                                                          [1, config.num_mixture_components, 1])
+
+            logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
+
+            s_pred = K.exp(logVar_pred/2) * np.sqrt(3) / np.pi
 
 
-        autoencoder.compile(optimizer=config.optimizer, loss=normal_loss)
+
+            y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
+
+            tmp = K.log(_logistic_cdf(y_true_tiled + 0.5/255, mu_pred, s_pred) - _logistic_cdf(y_true_tiled - 0.5/255, mu_pred, s_pred)) + logpi_pred
+
+            tmp = K.logsumexp(tmp, axis=1)
+            return K.sum(tmp, axis=1)
+
+        if config.component_form == 'Gaussian':
+            autoencoder.compile(optimizer=config.optimizer, loss=normal_loss)
+        elif config.component_form == 'logistic':
+            autoencoder.compile(optimizer=config.optimizer, loss=logistic_loss)
+        else:
+            raise Exception('not implemented')
 
         return autoencoder
 
@@ -497,29 +529,43 @@ class MADE:
                                      callbacks=[early_stop],
                                      verbose=1)
 
-
     def predict(self, test_data):
+
+        def _logistic_cdf_numpy(y, mu, s):
+            y_altered = y.copy()
+            y_altered[y < 0] = -np.inf
+            y_altered[y > 1] = np.inf
+            return 1 / (1 + np.exp(-1 * (y_altered - mu) / s))
+
         print('predict start')
         test_size = test_data.shape[0]
         all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size])
         for j in range(config.num_of_all_masks):
             made_predict = self.autoencoder.predict([test_data, j * np.ones([test_size,1])])#.reshape(1, hlayer_size, graph_size)]
 
-            tmp_sz = config.num_Gaussian_components * config.graph_size
+            tmp_sz = config.num_mixture_components * config.graph_size
             made_predict_mu = made_predict[ :, :tmp_sz]
             made_predict_logVar = made_predict[ :, tmp_sz:2*tmp_sz]
             made_predict_logpi_unnormalized = made_predict[ :, 2*tmp_sz:]
 
-            made_predict_mu = np.reshape( made_predict_mu, [-1, config.num_Gaussian_components, config.graph_size] )
-            made_predict_logVar = np.reshape( made_predict_logVar, [-1, config.num_Gaussian_components, config.graph_size] )
-            made_predict_logpi_unnormalized = np.reshape( made_predict_logpi_unnormalized, [-1, config.num_Gaussian_components, config.graph_size] )
-            made_predict_logpi = made_predict_logpi_unnormalized - np.tile( logsumexp(made_predict_logpi_unnormalized, axis=1, keepdims=True), [1, config.num_Gaussian_components, 1] )
+            made_predict_mu = np.reshape(made_predict_mu, [-1, config.num_mixture_components, config.graph_size])
+            made_predict_logVar = np.reshape(made_predict_logVar, [-1, config.num_mixture_components, config.graph_size])
+            made_predict_logpi_unnormalized = np.reshape(made_predict_logpi_unnormalized, [-1, config.num_mixture_components, config.graph_size])
+            made_predict_logpi = made_predict_logpi_unnormalized - np.tile(logsumexp(made_predict_logpi_unnormalized, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
 
             made_predict_logVar = np.log(np.exp(made_predict_logVar) + MIN_VAR)
 
-            test_data_tiled = np.tile( np.expand_dims(test_data, 1), [1, config.num_Gaussian_components, 1] )
+            test_data_tiled = np.tile(np.expand_dims(test_data, 1), [1, config.num_mixture_components, 1])
 
-            tmp = -0.5 * (test_data_tiled - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2 + made_predict_logpi
+            if config.component_form == 'Gaussian':
+                tmp = -0.5 * (test_data_tiled - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2 + made_predict_logpi
+            elif config.component_form == 'logistic':
+                made_predict_s = np.exp(made_predict_logVar / 2) * np.sqrt(3) / np.pi
+                tmp = np.log(
+                    _logistic_cdf_numpy(test_data_tiled + 0.5 / 255, made_predict_mu, made_predict_s) -
+                    _logistic_cdf_numpy(test_data_tiled - 0.5 / 255, made_predict_mu, made_predict_s)) + made_predict_logpi
+            else:
+                raise Exception('not implemented')
             log_probs = logsumexp(tmp, axis=1)
 
             # eps = 0.00001
@@ -535,17 +581,17 @@ class MADE:
         print('predict finish')
         return res
 
-    def generate(self, n):
-        mask_index = np.random.randint(0,config.num_of_all_masks,n)
-        generated_samples = np.zeros([n,config.graph_size])
-        all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
-        for i in range(config.graph_size):
-            ind = (all_pi_nparray[mask_index,:] == i)
-            pred = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])
-            mu = pred[ :, :config.graph_size][ind]
-            logVar = np.log(np.exp(pred[ :, config.graph_size:][ind]) + MIN_VAR)
-            generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
-        return generated_samples
+    # def generate(self, n):
+    #     mask_index = np.random.randint(0,config.num_of_all_masks,n)
+    #     generated_samples = np.zeros([n,config.graph_size])
+    #     all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
+    #     for i in range(config.graph_size):
+    #         ind = (all_pi_nparray[mask_index,:] == i)
+    #         pred = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])
+    #         mu = pred[ :, :config.graph_size][ind]
+    #         logVar = np.log(np.exp(pred[ :, config.graph_size:][ind]) + MIN_VAR)
+    #         generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
+    #     return generated_samples
 
 
 

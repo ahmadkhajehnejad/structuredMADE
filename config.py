@@ -18,8 +18,8 @@ logReg_pretrain = False # True #
 from keras import optimizers
 
 ## General configs
-
-num_Gaussian_components = 3
+component_form = 'logistic' # 'Gaussian'
+num_mixture_components = 3
 
 AE_adam = optimizers.Adam(lr=0.001, beta_1=0.1)
 
