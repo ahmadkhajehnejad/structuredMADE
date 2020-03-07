@@ -112,6 +112,8 @@ def main():
     normal_class = args.normal_class
     data_protocol = args.data_protocol
 
+    print(data_name)
+
     if config.data_name.startswith('mnist'):
         (x_1, y_1), (x_2, y_2) = mnist.load_data()
         x_1 = x_1.reshape([x_1.shape[0], -1])
