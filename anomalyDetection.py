@@ -112,7 +112,7 @@ def main():
     normal_class = args.normal_class
     data_protocol = args.data_protocol
 
-    print(data_name)
+    print(config.data_name)
 
     if config.data_name.startswith('mnist'):
         (x_1, y_1), (x_2, y_2) = mnist.load_data()
