@@ -19,7 +19,9 @@ from sklearn.linear_model import LogisticRegression
 from functools import reduce
 from scipy.misc import logsumexp
 
+#### 0-255
 MIN_VAR = 0.0001
+#MIN_VAR = 1.
 
 def _spread(current_node, root_node, visited, adj, pi):
         visited[current_node]=True
@@ -410,11 +412,13 @@ class MADE:
             clayer_pi = Concatenate()([semiFinal_layer_pi, input_layer])
             for i in range(config.num_mixture_components):
                 list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer_mu, state] ) )
+                #### 0-255
                 list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_logVar, state]) )
                 list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_pi, state]))
         else:
             for i in range(config.num_mixture_components):
                 list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_mu, state] ) )
+                #### 0-255
                 list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_sigma, state]) )
                 list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_pi, state]) )
 
@@ -433,21 +437,26 @@ class MADE:
             logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred, [-1, config.num_mixture_components, config.graph_size])
             logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
 
+            #### 0-255
             logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
+            # logVar_pred = logVar_pred * np.log(400)
+
 
             y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
 
-            tmp = 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred / 2 + logpi_pred
+            tmp = logpi_pred - 0.5 * logVar_pred - 0.5 * np.log(2*np.pi) - 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred)
 
             tmp = K.logsumexp(tmp, axis=1)
-            return K.sum(tmp, axis=1)
+            return -K.sum(tmp, axis=1)
 
 
             # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
             # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
 
         def _logistic_cdf(y, mu, s):
-            y_altered = y + K.cast( y < 0, y.dtype) * -1000 + K.cast( y > 1, y.dtype) * 1000
+            #### 0-255
+            y_altered = y + K.cast(y < 0, y.dtype) * -1000 + K.cast(y > 1, y.dtype) * 1000
+            # y_altered = y + K.cast(y < 0, y.dtype) * -1000000 + K.cast(y > 255, y.dtype) * 1000000
             return 1 / (1 + K.exp(-1*(y_altered - mu)/s))
 
         def logistic_loss(y_true, y_pred):
@@ -462,17 +471,21 @@ class MADE:
             logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True),
                                                           [1, config.num_mixture_components, 1])
 
+            #### 0-255
             logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
+            # logVar_pred = logVar_pred * np.log(400)
 
-            s_pred = K.exp(logVar_pred/2) * np.sqrt(3) / np.pi
+            s_pred = K.exp(logVar_pred/2) * np.sqrt(3) / np.p
 
 
 
             y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
 
+            #### 0-255
             tmp = K.log(_logistic_cdf(y_true_tiled + 0.5/255, mu_pred, s_pred) - _logistic_cdf(y_true_tiled - 0.5/255, mu_pred, s_pred)) + logpi_pred
+            # tmp = K.log(_logistic_cdf(y_true_tiled*255 + 0.5, mu_pred*255, s_pred) - _logistic_cdf(y_true_tiled*255 - 0.5, mu_pred*255, s_pred)) + logpi_pred
 
-            tmp = K.logsumexp(tmp, axis=1)
+            tmp = -1 * K.logsumexp(tmp, axis=1)
             return K.sum(tmp, axis=1)
 
         if config.component_form == 'Gaussian':
@@ -529,17 +542,22 @@ class MADE:
                                      callbacks=[early_stop],
                                      verbose=1)
 
-    def predict(self, test_data):
+    def predict(self, test_data, pixelwise=False):
 
         def _logistic_cdf_numpy(y, mu, s):
             y_altered = y.copy()
             y_altered[y < 0] = -np.inf
+            #### 0-255
             y_altered[y > 1] = np.inf
+            # y_altered[y > 255] = np.inf
             return 1 / (1 + np.exp(-1 * (y_altered - mu) / s))
 
         print('predict start')
         test_size = test_data.shape[0]
-        all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size])
+        if not pixelwise:
+            all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size])
+        else:
+            all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size, config.graph_size])
         for j in range(config.num_of_all_masks):
             made_predict = self.autoencoder.predict([test_data, j * np.ones([test_size,1])])#.reshape(1, hlayer_size, graph_size)]
 
@@ -553,7 +571,9 @@ class MADE:
             made_predict_logpi_unnormalized = np.reshape(made_predict_logpi_unnormalized, [-1, config.num_mixture_components, config.graph_size])
             made_predict_logpi = made_predict_logpi_unnormalized - np.tile(logsumexp(made_predict_logpi_unnormalized, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
 
+            #### 0-255
             made_predict_logVar = np.log(np.exp(made_predict_logVar) + MIN_VAR)
+            # made_predict_logVar = made_predict_logVar * np.log(400)
 
             test_data_tiled = np.tile(np.expand_dims(test_data, 1), [1, config.num_mixture_components, 1])
 
@@ -561,9 +581,13 @@ class MADE:
                 tmp = -0.5 * (test_data_tiled - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2 + made_predict_logpi
             elif config.component_form == 'logistic':
                 made_predict_s = np.exp(made_predict_logVar / 2) * np.sqrt(3) / np.pi
+                #### 0-255
                 tmp = np.log(
                     _logistic_cdf_numpy(test_data_tiled + 0.5 / 255, made_predict_mu, made_predict_s) -
                     _logistic_cdf_numpy(test_data_tiled - 0.5 / 255, made_predict_mu, made_predict_s)) + made_predict_logpi
+                # tmp = np.log(
+                #     _logistic_cdf_numpy(test_data_tiled*255 + 0.5, made_predict_mu*255, made_predict_s) -
+                #     _logistic_cdf_numpy(test_data_tiled*255 - 0.5, made_predict_mu*255, made_predict_s)) + made_predict_logpi
             else:
                 raise Exception('not implemented')
             log_probs = logsumexp(tmp, axis=1)
@@ -572,8 +596,11 @@ class MADE:
             # log_probs[log_probs < np.log(eps)] = np.log(eps)
             # log_probs[log_probs > np.log(1 - eps)] = np.log(1 - eps)
 
-            made_log_prob = np.sum(log_probs, axis=1)
-            all_masks_log_probs[j][:] = made_log_prob
+            if not pixelwise:
+                made_log_prob = np.sum(log_probs, axis=1)
+                all_masks_log_probs[j][:] = made_log_prob
+            else:
+                all_masks_log_probs[j,:,:] = log_probs
 
 
         #res = np.log(np.mean(probs, axis=0))
