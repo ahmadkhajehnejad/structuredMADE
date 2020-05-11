@@ -446,7 +446,7 @@ class MADE:
 
             tmp = logpi_pred - 0.5 * logVar_pred - 0.5 * np.log(2*np.pi) - 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred)
 
-            tmp = K.logsumexp(tmp, axis=1)
+            tmp = K.logsumexp(tmp, axis=1) - np.log(256) * config.graph_size
             return -K.sum(tmp, axis=1)
 
 
