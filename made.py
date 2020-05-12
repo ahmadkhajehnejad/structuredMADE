@@ -590,7 +590,7 @@ class MADE:
                 #     _logistic_cdf_numpy(test_data_tiled*255 - 0.5, made_predict_mu*255, made_predict_s)) + made_predict_logpi
             else:
                 raise Exception('not implemented')
-            log_probs = logsumexp(tmp, axis=1)
+            log_probs = logsumexp(tmp, axis=1) - np.log(256)
 
             # eps = 0.00001
             # log_probs[log_probs < np.log(eps)] = np.log(eps)
