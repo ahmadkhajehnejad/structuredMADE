@@ -388,15 +388,17 @@ class MADE:
                 cnt += np.sum(mask)
         return cnt
 
-
     def build_autoencoder(self):
 
         input_layer = Input(shape=(config.graph_size,))
         state = Input(shape=(1,), dtype="int32")
 
-        hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')( [input_layer, state] )
-        for i in range(1,config.num_of_hlayer - 1):
-            hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')( [hlayer, state] )
+        if config.num_of_hlayer > 1:
+            hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')( [input_layer, state] )
+            for i in range(1, config.num_of_hlayer - 1):
+                hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')([hlayer, state])
+        else:
+            hlayer = input_layer
 
         semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')( [hlayer, state] )
         semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')( [hlayer, state] )
