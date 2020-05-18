@@ -610,17 +610,18 @@ class MADE:
         print('predict finish')
         return res
 
-    # def generate(self, n):
-    #     mask_index = np.random.randint(0,config.num_of_all_masks,n)
-    #     generated_samples = np.zeros([n,config.graph_size])
-    #     all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
-    #     for i in range(config.graph_size):
-    #         ind = (all_pi_nparray[mask_index,:] == i)
-    #         pred = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])
-    #         mu = pred[ :, :config.graph_size][ind]
-    #         logVar = np.log(np.exp(pred[ :, config.graph_size:][ind]) + MIN_VAR)
-    #         generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
-    #     return generated_samples
+    ## implemented just for 1 Gaussian (not mixture of Gaussians)
+    def generate(self, n):
+        mask_index = np.random.randint(0,config.num_of_all_masks,n)
+        generated_samples = np.zeros([n,config.graph_size])
+        all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
+        for i in range(config.graph_size):
+            ind = (all_pi_nparray[mask_index,:] == i)
+            pred = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])
+            mu = pred[ :, :config.graph_size][ind]
+            logVar = np.log(np.exp(pred[ :, config.graph_size:2*config.graph_size][ind]) + MIN_VAR)
+            generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
+        return generated_samples
 
 
 

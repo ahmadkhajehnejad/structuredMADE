@@ -1,24 +1,24 @@
 import numpy as np
-from keras.datasets import mnist
+from keras.datasets import mnist, cifar10
 
 def _uniform_sample_data_from_param_file(args):
-    
+
     with np.load(args['parameters_file']) as parameters:
         all_outcomes = parameters['all_outcomes']
 
     rnd_prm = np.random.permutation(len(all_outcomes))
     all_outcomes = all_outcomes[rnd_prm]
-    
+
     train_data = all_outcomes[:args['train_size']]
     test_data = all_outcomes[args['train_size']:args['train_size']+args['test_size']]
-            
+
     return {'train_data' : train_data,
             'test_data' : test_data
             }
 
 
 def _sample_data_from_param_file(args):
-    
+
     with np.load(args['parameters_file']) as parameters:
         all_outcomes = parameters['all_outcomes']
         prob_of_outcomes = parameters['prob_of_outcomes']
@@ -27,13 +27,13 @@ def _sample_data_from_param_file(args):
     p = np.random.uniform(0,1,args['train_size'])
     ind = np.searchsorted(cum_probs, p)
     train_data = all_outcomes[ind,:]
-    train_data_probs = prob_of_outcomes[ind]           
+    train_data_probs = prob_of_outcomes[ind]
 
     p = np.random.uniform(0,1,args['test_size'])
     ind = np.searchsorted(cum_probs, p)
     test_data = all_outcomes[ind,:]
     test_data_probs = prob_of_outcomes[ind]
-            
+
     return {'train_data' : train_data,
             'train_data_probs' : train_data_probs,
             'test_data' : test_data,
@@ -76,6 +76,21 @@ def _gen_mnist_data(args):
             'test_data' : test_data}
     #img = Image.fromarray(trd[154]*255)
     #img.show()
+
+def _gen_cifar10_data(args):
+    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+    idx = np.random.permutation(x_train.shape[0])
+    x_train = x_train[idx] / 255.0
+    train_data = np.reshape(x_train, (x_train.shape[0], -1))
+
+    idx = np.random.permutation(x_test.shape[0])
+    x_test = x_test[idx] / 255.0
+    test_data = np.reshape(x_test, (x_test.shape[0], -1))
+
+    return {'train_data' : train_data,
+            'test_data' : test_data}
+
 
 def _gen_ocr_data(args):
     with open('datasets/letter.data', 'r') as fin:
@@ -151,9 +166,16 @@ def gen_data(args):
         dt['train_data_probs'] = None
         dt['test_data_probs'] = None
         dest_file = 'datasets/BayesNet_' + str(args['n']) + '_' + str(args['par_num']) + '.npz'
-    
-        
-        
+    elif args['data_name'] == 'cifar10':
+        dt = _gen_cifar10_data(args)
+        dt['all_outcomes'] = None
+        dt['prob_of_outcomes'] = None
+        dt['train_data_probs'] = None
+        dt['test_data_probs'] = None
+        dest_file = 'datasets/cifar10.npz'
+
+
+
     np.savez(dest_file,
              train_data = dt['train_data'],
              train_data_probs = dt['train_data_probs'],
@@ -168,9 +190,11 @@ def gen_data(args):
 #gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'rcv1'})
 
-for d in range(10):
-    print(d)
-    gen_data({'data_name' : 'mnist', 'digit' : d})
+# for d in range(10):
+#     print(d)
+#     gen_data({'data_name' : 'mnist', 'digit' : d})
+
+gen_data({'data_name' : 'cifar10'})
 
 #gen_data({'data_name' : 'BayesNet', 'n' : 100, 'par_num' : 5, 'train_size' : 20000, 'test_size' : 20000})
 

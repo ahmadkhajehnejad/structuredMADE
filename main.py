@@ -63,8 +63,8 @@ def execute_one_round(round_num):
     model.fit(data['train_data'], data['valid_data'])
         
     pred = model.predict(data['test_data'])
-        
-    res = dict()    
+
+    res = dict()
     res['NLL'], res['KL'] = evaluate(pred, data['test_data_probs'])
     print('KL: ' + str(res['KL']), file=sys.stderr)
     print('NLL: ' + str(res['NLL']), file=sys.stderr)

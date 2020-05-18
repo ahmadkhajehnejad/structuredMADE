@@ -113,18 +113,12 @@ def get_data(args):
 
             args['data_file'] = 'datasets/binary_mnist_' + str(0) + '.npz'
             res = _get_data_from_file(args)
-            res['train_labels'] = np.zeros([res['train_data'].shape[0]])
-            res['vaalidation_labels'] = np.zeros([res['validation_data'].shape[0]])
-            res['test_labels'] = np.zeros([res['test_data'].shape[0]])
             for d in range(1, 10):
                 args['data_file'] = 'datasets/binary_mnist_' + str(d) + '.npz'
                 tmp = _get_data_from_file(args)
                 res['train_data'] = np.concatenate([res['train_data'], tmp['train_data']], axis=0)
                 res['valid_data'] = np.concatenate([res['valid_data'], tmp['valid_data']], axis=0)
                 res['test_data'] = np.concatenate([res['test_data'], tmp['test_data']], axis=0)
-                res['train_labels'] = np.concatenate([res['train_labels'], d*np.ones([res['train_data'].shape[0]])], axis=0)
-                res['train_labels'] = np.concatenate([res['train_labels'], d * np.ones([res['train_data'].shape[0]])],
-                                                     axis=0)
             np.random.shuffle(res['train_data'])
             np.random.shuffle(res['valid_data'])
             np.random.shuffle(res['test_data'])
@@ -169,6 +163,13 @@ def get_data(args):
         args['valid_size'] = va
         args['test_size'] = te
 
+        return res
+    elif args['data_name'].startswith('cifar10'):
+        args['data_file'] = 'datasets/cifar10.npz'
+        res = _get_data_from_file(args)
+        np.random.shuffle(res['train_data'])
+        np.random.shuffle(res['valid_data'])
+        np.random.shuffle(res['test_data'])
         return res
     elif args['data_name'].startswith('celebA'):
         tr = args['train_size']
@@ -260,14 +261,18 @@ def get_data_structure():
         parameters['adjacency_matrix'] = adj
 
     elif config.data_name.startswith('binarized_mnist') or config.data_name.startswith(
-        'mnist') or config.data_name.startswith('ocr') or config.data_name.startswith('celebA'):
+        'mnist') or config.data_name.startswith('ocr') or config.data_name.startswith('celebA')\
+            or config.data_name.startswith('cifar10'):
         graph_size = config.graph_size
         if config.data_name.startswith('binarized_mnistdps') or config.data_name.startswith('mnistdps') \
-            or config.data_name.startswith('ocrdps') or config.data_name.startswith('celebAdps'):
+            or config.data_name.startswith('ocrdps') or config.data_name.startswith('celebAdps')\
+                or config.data_name.startswith('cifar10dps'):
             if config.data_name.startswith('binarized_mnistdps'):
                 dp = int(config.data_name[18:])
             elif config.data_name.startswith('mnistdps'):
                 dp = int(config.data_name[8:])
+            elif config.data_name.startswith('cifar10dps'):
+                dp = 3 * int(config.data_name[10:]) + 2
             elif config.data_name.startswith('celebAdps'):
                 dp = int(config.data_name[9:])
             else:
@@ -289,6 +294,8 @@ def get_data_structure():
                 dp = int(config.data_name[17:])
             elif config.data_name.startswith('mnistdp'):
                 dp = int(config.data_name[7:])
+            elif config.data_name.startswith('cifar10dp'):
+                dp = 3 * int(config.data_name[9:]) + 2
             elif config.data_name.startswith('celebAdp'):
                 dp = int(config.data_name[8:])
             else:

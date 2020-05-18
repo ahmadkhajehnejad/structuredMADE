@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
         plt.figure()
         plt.plot(fpr_a, tpr_a, color='darkorange', lw=2, label='a')
-        plt.plot(fpr_b, tpr_b, color='blue', lw=b, label='a')
+        plt.plot(fpr_b, tpr_b, color='blue', lw=2, label='a')
         plt.plot([0, 1], [0, 1], color='cyan', lw=1, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
@@ -55,6 +55,6 @@ if __name__ == '__main__':
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic')
         plt.legend(loc="lower right")
-        plt.show()
+        plt.savefig('./ROC.png')
     else:
         raise Exception('not implemented curve type ', args.curve_type)

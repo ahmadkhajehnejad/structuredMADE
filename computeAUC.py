@@ -34,13 +34,18 @@ if __name__ == '__main__':
     while i_ < n_:
         j_ = min(i_ + config.batch_size, n_)
         tmp = model.predict(x_test[i_:j_,:]).reshape([-1])
+        tmp_pixelwise = model.predict(x_test[i_:j_,:], pixelwise=True).reshape([-1, config.height*config.width])
         if i_ == 0:
             pred_log_probs = tmp
+            pred_log_probs_pixelwise = tmp_pixelwise
         else:
             pred_log_probs = np.concatenate( [pred_log_probs, tmp], axis=0)
+            pred_log_probs_pixelwise = np.concatenate( [pred_log_probs_pixelwise, tmp_pixelwise], axis=0)
         i_ = j_
     with open('saved_data/digit-' + str(normal_class) + '-pred.pkl', 'wb') as fout:
        pickle.dump(pred_log_probs, fout)
+    with open('saved_data/digit-' + str(normal_class) + '-pred-pixelwise.pkl', 'wb') as fout:
+       pickle.dump(pred_log_probs_pixelwise, fout)
     # with open('saved_data/digit-' + str(normal_class) + '-pred.pkl', 'rb') as fin:
     #     pred_log_probs = pickle.load(fin)
 
