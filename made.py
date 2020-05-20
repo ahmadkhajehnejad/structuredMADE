@@ -14,10 +14,9 @@ import bfs_orders
 if config.use_multiprocessing:
     from multiprocessing import Process, Queue
 #import sys
-from scipy.misc import logsumexp
 from sklearn.linear_model import LogisticRegression
 from functools import reduce
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 
 #### 0-255
 MIN_VAR = 0.0001
@@ -434,10 +433,19 @@ class MADE:
             tmp_sz = config.num_mixture_components * config.graph_size
             mu_pred, logVar_pred, logpi_unnormalized_pred = y_pred[:, :tmp_sz], y_pred[:, tmp_sz:2*tmp_sz], y_pred[:, 2*tmp_sz:]
 
+            # if config.use_uniform_noise_for_pmf:
+            #     y_true = K.tile(y_true, [config.num_noisy_samples_per_sample, 1])
+            #     y_true = y_true + K.random_uniform(K.shape(y_true)) / 256.0
+            #     mu_pred = K.tile(mu_pred, [config.num_noisy_samples_per_sample, 1])
+            #     logVar_pred = K.tile(logVar_pred, [config.num_noisy_samples_per_sample, 1])
+            #     logpi_unnormalized_pred = K.tile(logpi_unnormalized_pred, [config.num_noisy_samples_per_sample, 1])
+
             mu_pred = K.reshape(mu_pred, [-1, config.num_mixture_components, config.graph_size])
             logVar_pred = K.reshape(logVar_pred, [-1, config.num_mixture_components, config.graph_size])
             logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred, [-1, config.num_mixture_components, config.graph_size])
             logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
+
+
 
             #### 0-255
             logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
@@ -449,7 +457,12 @@ class MADE:
             tmp = logpi_pred - 0.5 * logVar_pred - 0.5 * np.log(2*np.pi) - 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred)
 
             tmp = K.logsumexp(tmp, axis=1) - np.log(256)
-            return -K.sum(tmp, axis=1)
+            tmp = -K.sum(tmp, axis=1)
+
+            # if config.use_uniform_noise_for_pmf:
+            #     tmp = K.reshape(tmp, [config.num_noisy_samples_per_sample, -1])
+            #     return K.logsumexp(tmp, axis=0) - np.log(config.num_noisy_samples_per_sample)
+            return tmp
 
 
             # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
@@ -560,6 +573,11 @@ class MADE:
             all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size])
         else:
             all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size, config.graph_size])
+
+        # if config.use_uniform_noise_for_pmf:
+        #     noisy_test_data = np.tile(test_data, [config.num_noisy_samples_per_sample, 1])
+        #     noisy_test_data = noisy_test_data + np.random.rand(np.prod(noisy_test_data.shape)).reshape(noisy_test_data.shape) / 256
+
         for j in range(config.num_of_all_masks):
             made_predict = self.autoencoder.predict([test_data, j * np.ones([test_size,1])])#.reshape(1, hlayer_size, graph_size)]
 
@@ -567,6 +585,11 @@ class MADE:
             made_predict_mu = made_predict[ :, :tmp_sz]
             made_predict_logVar = made_predict[ :, tmp_sz:2*tmp_sz]
             made_predict_logpi_unnormalized = made_predict[ :, 2*tmp_sz:]
+
+            # if config.use_uniform_noise_for_pmf:
+            #     made_predict_mu = np.tile(made_predict_mu, [config.num_noisy_samples_per_sample, 1])
+            #     made_predict_logVar = np.tile(made_predict_logVar, [config.num_noisy_samples_per_sample, 1])
+            #     made_predict_logpi_unnormalized = np.tile(made_predict_logpi_unnormalized, [config.num_noisy_samples_per_sample, 1])
 
             made_predict_mu = np.reshape(made_predict_mu, [-1, config.num_mixture_components, config.graph_size])
             made_predict_logVar = np.reshape(made_predict_logVar, [-1, config.num_mixture_components, config.graph_size])
@@ -578,6 +601,10 @@ class MADE:
             # made_predict_logVar = made_predict_logVar * np.log(400)
 
             test_data_tiled = np.tile(np.expand_dims(test_data, 1), [1, config.num_mixture_components, 1])
+            # if config.use_uniform_noise_for_pmf:
+            #     test_data_tiled = np.tile(np.expand_dims(noisy_test_data, 1), [1, config.num_mixture_components, 1])
+            # else:
+            #     test_data_tiled = np.tile(np.expand_dims(test_data, 1), [1, config.num_mixture_components, 1])
 
             if config.component_form == 'Gaussian':
                 tmp = -0.5 * (test_data_tiled - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2 + made_predict_logpi
@@ -597,6 +624,10 @@ class MADE:
             # eps = 0.00001
             # log_probs[log_probs < np.log(eps)] = np.log(eps)
             # log_probs[log_probs > np.log(1 - eps)] = np.log(1 - eps)
+
+            # if config.use_uniform_noise_for_pmf:
+            #     log_probs = log_probs.reshape([config.num_noisy_samples_per_sample, test_size, config.graph_size])
+            #     log_probs = logsumexp(log_probs, axis=0) - np.log(config.num_noisy_samples_per_sample)
 
             if not pixelwise:
                 made_log_prob = np.sum(log_probs, axis=1)

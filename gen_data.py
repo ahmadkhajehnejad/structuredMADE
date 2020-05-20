@@ -64,28 +64,28 @@ def _gen_mnist_data(args):
     special_digit = args['digit']
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     print('x_train.shape: ', x_train.shape)
-    trd = x_train[y_train == special_digit]/255.0
+    trd = x_train[y_train == special_digit]/256.0
     np.random.shuffle(trd)
     #train_data = np.reshape(trd[:,7:21,7:21], (trd.shape[0], 14*14))
     train_data = np.reshape(trd, (trd.shape[0], -1))
-    ted = x_test[y_test == special_digit]/255.0
+    ted = x_test[y_test == special_digit]/256.0
     np.random.shuffle(ted)
     #test_data = np.reshape(ted[:,7:21,7:21], (ted.shape[0], 14*14))
     test_data = np.reshape(ted, (ted.shape[0], -1))
     return {'train_data' : train_data,
             'test_data' : test_data}
-    #img = Image.fromarray(trd[154]*255)
+    #img = Image.fromarray(trd[154]*256)
     #img.show()
 
 def _gen_cifar10_data(args):
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
     idx = np.random.permutation(x_train.shape[0])
-    x_train = x_train[idx] / 255.0
+    x_train = x_train[idx] / 256.0
     train_data = np.reshape(x_train, (x_train.shape[0], -1))
 
     idx = np.random.permutation(x_test.shape[0])
-    x_test = x_test[idx] / 255.0
+    x_test = x_test[idx] / 256.0
     test_data = np.reshape(x_test, (x_test.shape[0], -1))
 
     return {'train_data' : train_data,
@@ -190,11 +190,11 @@ def gen_data(args):
 #gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'rcv1'})
 
-# for d in range(10):
-#     print(d)
-#     gen_data({'data_name' : 'mnist', 'digit' : d})
+for d in range(10):
+    print(d)
+    gen_data({'data_name' : 'mnist', 'digit' : d})
 
-gen_data({'data_name' : 'cifar10'})
+# gen_data({'data_name' : 'cifar10'})
 
 #gen_data({'data_name' : 'BayesNet', 'n' : 100, 'par_num' : 5, 'train_size' : 20000, 'test_size' : 20000})
 

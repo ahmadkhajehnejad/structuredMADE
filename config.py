@@ -1,5 +1,4 @@
 hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
-use_multiprocessing = True
 num_of_all_masks = 10
 num_of_hlayer = 2
 hlayer_size = 1200
@@ -17,12 +16,14 @@ fast_train = True # False #
 logReg_pretrain = False # True #         
 from keras import optimizers
 
-## General configs
-component_form = 'logistic' # 'Gaussian'
-num_mixture_components = 3
+component_form = 'Gaussian' # 'logistic' #
+num_mixture_components = 1
+use_uniform_noise_for_pmf = True
+num_noisy_samples_per_sample = 100
 
 AE_adam = optimizers.Adam(lr=0.001, beta_1=0.1)
 
+## General configs
 use_multiprocessing = True
 generate_samples = False
 generated_samples_dir = './generated_samples/'
