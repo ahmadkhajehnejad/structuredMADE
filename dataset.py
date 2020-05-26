@@ -58,14 +58,14 @@ def _get_data_from_file(args):
             else:
                 test_data_probs = None
 
-    if config.use_uniform_noise_for_pmf:
-        [train_data, valid_data, test_data] = [
-            np.tile(x, [config.num_noisy_samples_per_sample, 1]) +
-            np.random.rand(x.shape[0] * config.num_noisy_samples_per_sample * x.shape[1]).reshape(
-                [x.shape[0] * config.num_noisy_samples_per_sample, x.shape[1]]
-            )
-            for x in [train_data, valid_data, test_data]
-        ]
+    # if config.use_uniform_noise_for_pmf:
+    #     [train_data, valid_data, test_data] = [
+    #         np.tile(x, [config.num_noisy_samples_per_sample, 1]) +
+    #         np.random.rand(x.shape[0] * config.num_noisy_samples_per_sample * x.shape[1]).reshape(
+    #             [x.shape[0] * config.num_noisy_samples_per_sample, x.shape[1]]
+    #         ) / 256
+    #         for x in [train_data, valid_data, test_data]
+    #     ]
 
     return {'train_data' : train_data,
             'train_data_probs' : train_data_probs,

@@ -28,7 +28,7 @@ if __name__ == '__main__':
             [x_test, y_test] = pickle.load(fin)
 
     model = MADE()
-    model.autoencoder.load_weights('saved_models/' + 'digit-' + str(normal_class) + '.hdf5')
+    model.density_estimator.load_weights('saved_models/' + 'digit-' + str(normal_class) + '.hdf5')
     i_ = 0
     n_ = x_test.shape[0]
     while i_ < n_:

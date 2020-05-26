@@ -10,6 +10,9 @@ from PIL import Image
 import tensorflow as tf
 from keras import backend as K
 
+import argparse
+import pickle
+import os
 
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth=True
@@ -28,7 +31,7 @@ def evaluate(pred_log_probs, true_probs=None):
     return [NLL, None]
     
 
-def execute_one_round(round_num):
+def execute_one_round(round_num, all_pi, all_masks):
     
     args = {'data_name' : config.data_name, 'train_size' : config.train_size, 'valid_size' : config.validation_size, 'test_size' : config.test_size}
     if args['data_name'] == 'grid':
@@ -56,7 +59,7 @@ def execute_one_round(round_num):
     #         im = Image.fromarray(255*data['train_data'][i,:].reshape([config.height, config.width]))
     #         im.convert('RGB').save(config.generated_samples_dir+'train_' + str(i)+'.png')
 
-    model = MADE()
+    model = MADE(all_pi=all_pi, all_masks=all_masks)
 
     print('model initiated')
     
@@ -74,7 +77,9 @@ def execute_one_round(round_num):
 
     if config.generate_samples:
         n = config.num_of_generated_samples_each_execution
-        generated_samples = model.generate(n).reshape(n, config.height, -1, 3)
+        # generated_samples = model.generate(n).reshape(n, config.height, -1, 3)
+        generated_samples = model.generate(n).reshape(n, config.height, -1)
+        os.makedirs(config.generated_samples_dir, exist_ok=True)
         for i in range(n):
             im = Image.fromarray(256*generated_samples[i,:,:])
             im.convert('RGB').save(config.generated_samples_dir + str(round_num) + '--' + str(i)+'.png')
@@ -82,7 +87,7 @@ def execute_one_round(round_num):
     
     
 
-def main():
+def main(all_pi, all_masks):
     
     print ('algorithm: ', config.algorithm, '\tdata_name:', config.data_name)
     
@@ -94,7 +99,7 @@ def main():
     for ne in range(0, config.num_of_exec):
         print('execution #' + str(ne), file=sys.stderr)
         sys.stderr.flush()
-        res = execute_one_round(ne)
+        res = execute_one_round(ne, all_pi, all_masks)
         NLLs.append(res['NLL'])
         KLs.append(res['KL'])
         num_of_connections.append(res['num_of_connections'])
@@ -116,5 +121,23 @@ def main():
     print('Total Time:', total_time)
 
 if __name__=='__main__':
-    main()
+
+    parser = argparse.ArgumentParser(description='SMADE')
+
+    parser.add_argument('--make_masks', '-m', action='store_true', help='Just make masks and permutations')
+    parser.add_argument('--load_masks', '-l', action='store_true', help='Load masks and permutations')
+
+    args = parser.parse_args()
+
+    if args.make_masks:
+        model = MADE()
+        with open('masks.pkl','wb') as file:
+            pickle.dump([model.all_pi, model.all_masks], file)
+    else:
+        all_pi, all_masks = None, None
+        if args.load_masks:
+            with open('masks.pkl', 'rb') as file:
+                [all_pi, all_masks] = pickle.load(file)
+
+        main(all_pi, all_masks)
 

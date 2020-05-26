@@ -134,7 +134,7 @@ def main():
 
     if not os.path.exists('saved_models'):
         os.makedirs('saved_models')
-    model.autoencoder.save_weights('saved_models/' + 'digit-' + str(normal_class) + '.hdf5')
+    model.density_estimator.save_weights('saved_models/' + 'digit-' + str(normal_class) + '.hdf5')
 
 
     if not os.path.exists('saved_data'):

@@ -12,9 +12,11 @@ data_name = 'mnist' # ''grid' # 'mnistdps4' # 'binarized_mnist' # 'ocrdp1' # 'k_
 learn_alpha = False
 random_data = False
 use_best_validated_weights = True
-fast_train = True # False #
+fast_train = False # True #
 logReg_pretrain = False # True #         
 from keras import optimizers
+
+use_cnn = True
 
 component_form = 'Gaussian' # 'logistic' #
 num_mixture_components = 1
@@ -26,14 +28,14 @@ AE_adam = optimizers.Adam(lr=0.001, beta_1=0.1)
 ## General configs
 use_multiprocessing = True
 generate_samples = False
-generated_samples_dir = './generated_samples/'
-num_of_generated_samples_each_execution = 100
-num_of_exec = 5
-fit_iter = 1
+generated_samples_dir = './generated_samples_' + algorithm + '_' + str(random_dimensions_order) + '/'
+num_of_generated_samples_each_execution = 20
+num_of_exec = 3
+#fit_iter = 1
 num_of_epochs = 300   #max number of epoch if not reaches the ES condition
 batch_size = 50
 optimizer = AE_adam
-patience = 20
+patience = 10
 Q_restricted_2_pass = True
 
 ## grid configs
@@ -44,6 +46,7 @@ if data_name == 'grid':
 
 ## mnist configs
 if data_name.startswith('mnist'):
+    num_channels = 1
     width = 28
     height = 28
     digit = 'All'
@@ -79,7 +82,8 @@ if data_name.startswith('ocr'):
 
 # cifar
 if data_name.startswith('cifar'):
-    width = 32 * 3
+    num_channels = 3
+    width = 32 * num_channels
     height = 32
     graph_size = width * height
 

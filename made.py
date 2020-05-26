@@ -1,10 +1,10 @@
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Concatenate, Reshape
+from keras.layers import Input, Concatenate, Reshape, Flatten, Add, Average
 import config
 import keras
 from keras import backend as K
-from made_utils import MaskedDenseLayer, MyEarlyStopping
+from made_utils import MaskedDenseLayer, MyEarlyStopping, MaskedConvLayer
 from dataset import get_data_structure
 #from keras import optimizers
 import keras
@@ -100,9 +100,12 @@ class MADE:
         #print('avg reaching sizes: ', np.mean(self.reaching_dimesions_num()))
 
         if config.learn_alpha == True:
-            self.autoencoder, self.autoencoder_2 = self.build_autoencoder()
+            self.density_estimator, self.density_estimator_2 = self.build_autoencoder()
         else:
-            self.autoencoder = self.build_autoencoder()
+            if config.use_cnn:
+                self.density_estimator, self.cnn_model, self.autoencoder, self.input_autoencoder = self.build_autoencoder()
+            else:
+                self.density_estimator = self.build_autoencoder()
             if config.learn_alpha == 'heuristic':
                 self.alpha = np.zeros([config.num_of_all_masks])
         self.train_end_epochs = []
@@ -389,45 +392,73 @@ class MADE:
 
     def build_autoencoder(self):
 
+        autoencoder_firstlayers = [MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')]
+
+        for i in range(config.num_of_hlayer - 1):
+            autoencoder_firstlayers.append(
+                MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu'))
+
+        semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')
+        semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')
+        semiFinal_layer_pi = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')
+
+        final_layer_mu = []
+        final_layer_logVar = []
+        final_layer_logpi_unnormalized = []
+
+        for i in range(config.num_mixture_components):
+            final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid'))
+            final_layer_logVar.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
+            final_layer_logpi_unnormalized.append(
+                MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
+
+        def get_autoencode(inp, st):
+            h = inp
+            for layer in autoencoder_firstlayers:
+                h = layer([h, st])
+            h_mu = semiFinal_layer_mu([h, st])
+            h_sigma = semiFinal_layer_sigma([h, st])
+            h_pi = semiFinal_layer_pi([h, st])
+
+            if config.direct_links:
+                c_mu = Concatenate()([h_mu, inp])
+                c_logVar = Concatenate()([h_sigma, inp])
+                c_pi = Concatenate()([h_pi, inp])
+            else:
+                c_mu, c_logVar, c_pi = h_mu, h_sigma, h_pi
+
+            f_mu, f_logVar, f_logpi_unnormalized = [], [], []
+            for layer in final_layer_mu:
+                f_mu.append(layer([c_mu, st]))
+            for layer in final_layer_logVar:
+                f_logVar.append(layer([c_logVar, st]))
+            for layer in final_layer_logpi_unnormalized:
+                f_logpi_unnormalized.append(layer([c_pi, st]))
+
+            output = Concatenate()([f_mu, f_logVar, final_layer_logpi_unnormalized])
+            return output
+
+
         input_layer = Input(shape=(config.graph_size,))
+
+        if config.use_cnn:
+            input_layer = Reshape([config.height, config.width/config.num_channels, config.num_channels])(input_layer)
+            cnn1 = MaskedConvLayer(10, 3, 'relu')(input_layer)
+            cnn2 = MaskedConvLayer(10, 3, 'relu')(cnn1)
+            cnn3 = MaskedConvLayer(config.num_channels, 3, 'sigmoid')(cnn2)
+            flattened = Flatten()(cnn3)
+            processed_input = Average()([flattened, input_layer])
+
         state = Input(shape=(1,), dtype="int32")
 
-        if config.num_of_hlayer > 1:
-            hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')( [input_layer, state] )
-            for i in range(1, config.num_of_hlayer - 1):
-                hlayer = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu')([hlayer, state])
+        if config.use_cnn:
+            density_estimator = Model(inputs=[input_layer, state], outputs=[Concatenate()([get_autoencode(processed_input), processed_input])])
+            cnn_model = Model(inputs=[input_layer], outputs=[processed_input])
+            input_autoencoder = Input(shape=(config.graph_size,))
+            autoencoder = Model(inputs=[input_autoencoder], outputs=[get_autoencode(input_autoencoder)])
         else:
-            hlayer = input_layer
-
-        semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')( [hlayer, state] )
-        semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')( [hlayer, state] )
-        semiFinal_layer_pi = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')([hlayer, state])
-
-        list_output_layer_mu = []
-        list_output_layer_logVar = []
-        list_output_layer_logpi_unnormalized = []
-
-        if config.direct_links:
-            clayer_mu = Concatenate()([semiFinal_layer_mu, input_layer])
-            clayer_logVar = Concatenate()([semiFinal_layer_sigma, input_layer])
-            clayer_pi = Concatenate()([semiFinal_layer_pi, input_layer])
-            for i in range(config.num_mixture_components):
-                list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [clayer_mu, state] ) )
-                #### 0-255
-                list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_logVar, state]) )
-                list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')([clayer_pi, state]))
-        else:
-            for i in range(config.num_mixture_components):
-                list_output_layer_mu.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid')( [semiFinal_layer_mu, state] ) )
-                #### 0-255
-                list_output_layer_logVar.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_sigma, state]) )
-                list_output_layer_logpi_unnormalized.append( MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear')( [semiFinal_layer_pi, state]) )
-
-
-
-        output_layer = Concatenate()(list_output_layer_mu + list_output_layer_logVar + list_output_layer_logpi_unnormalized)
-        autoencoder = Model(inputs=[input_layer, state], outputs=[output_layer])
-
+            density_estimator = Model(inputs=[input_layer, state], outputs=[get_autoencode(input_layer)])
+            cnn_model = None
 
         def normal_loss(y_true, y_pred):
             tmp_sz = config.num_mixture_components * config.graph_size
@@ -445,18 +476,18 @@ class MADE:
             logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred, [-1, config.num_mixture_components, config.graph_size])
             logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
 
-
-
             #### 0-255
             logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
             # logVar_pred = logVar_pred * np.log(400)
-
 
             y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
 
             tmp = logpi_pred - 0.5 * logVar_pred - 0.5 * np.log(2*np.pi) - 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred)
 
-            tmp = K.logsumexp(tmp, axis=1) - np.log(256)
+            tmp = K.logsumexp(tmp, axis=1)
+            if config.use_cnn:
+                tmp = tmp - np.log(2)
+            tmp = tmp - np.log(256)
             tmp = -K.sum(tmp, axis=1)
 
             # if config.use_uniform_noise_for_pmf:
@@ -467,6 +498,9 @@ class MADE:
 
             # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
             # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
+
+        def normal_loss_use_cnn(y_true, y_pred):
+            return normal_loss(y_pred[:, -(config.graph_size):], y_pred[:, : -(config.graph_size)])
 
         def _logistic_cdf(y, mu, s):
             #### 0-255
@@ -504,60 +538,129 @@ class MADE:
             return K.sum(tmp, axis=1)
 
         if config.component_form == 'Gaussian':
-            autoencoder.compile(optimizer=config.optimizer, loss=normal_loss)
+            if config.use_cnn:
+                density_estimator.compile(optimizer=config.optimizer, loss=normal_loss_use_cnn)
+            else:
+                density_estimator.compile(optimizer=config.optimizer, loss=normal_loss)
         elif config.component_form == 'logistic':
-            autoencoder.compile(optimizer=config.optimizer, loss=logistic_loss)
+            density_estimator.compile(optimizer=config.optimizer, loss=logistic_loss)
         else:
             raise Exception('not implemented')
 
-        return autoencoder
+        if config.use_cnn:
+            return density_estimator, cnn_model, autoencoder, input_autoencoder
+        return density_estimator
 
 
-    def fit(self, train_data, validation_data):
+    def fit(self, train_data_clean, validation_data_clean):
+        cnt = 0
+        best_loss = np.Inf
+        best_weights = None
+        for i in range(config.num_of_epochs):
+            if config.use_uniform_noise_for_pmf:
+                train_data = train_data_clean + np.random.rand(np.prod(train_data_clean.shape)).reshape(train_data_clean.shape) / 256
+                validation_data = validation_data_clean + np.random.rand(np.prod(validation_data_clean.shape)).reshape(validation_data_clean.shape) / 256
+            else:
+                train_data = train_data_clean
+                validation_data = validation_data_clean
 
-        early_stop = MyEarlyStopping(self.autoencoder, monitor='val_loss', min_delta=-0.0, patience=config.patience, verbose=1, mode='auto',
-                                     train_end_epochs=self.train_end_epochs)
-
-        if config.fast_train == True:
             validation_size = validation_data.shape[0]
             reped_state_valid = (np.arange(validation_size * config.num_of_all_masks) / validation_size).astype(
                 np.int32)
             reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
 
-            for i in range(0, config.fit_iter):
+            if config.fast_train == True:
                 train_size = train_data.shape[0]
                 reped_state_train = np.random.randint(0, config.num_of_all_masks, train_size)
                 reped_traindata = train_data
-                self.autoencoder.fit(x=[reped_traindata, reped_state_train],
-                                     y=[reped_traindata],
-                                     epochs=config.num_of_epochs,
-                                     batch_size=config.batch_size,
-                                     shuffle=True,
-                                     validation_data=([reped_validdata, reped_state_valid],
-                                                      [reped_validdata]),
-                                     callbacks=[early_stop],
-                                     verbose=1)
+            else:
+                train_size = train_data.shape[0]
+                reped_state_train = (np.arange(train_size * config.num_of_all_masks) / train_size).astype(np.int32)
+                reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
 
-        else:
-            train_size = train_data.shape[0]
-            reped_state_train = (np.arange(train_size * config.num_of_all_masks) / train_size).astype(np.int32)
-            reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
-            validation_size = validation_data.shape[0]
-            reped_state_valid = (np.arange(validation_size*config.num_of_all_masks)/validation_size).astype(np.int32)
-            reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
+            verbose = 1
+            if verbose > 0:
+                print('## Epoch:', i)
+            train_history = self.density_estimator.fit(x=[reped_traindata, reped_state_train],
+                                                       y=[reped_traindata],
+                                                       epochs=1,
+                                                       batch_size=config.batch_size,
+                                                       shuffle=True,
+                                                       validation_data=([reped_validdata, reped_state_valid],
+                                                  [reped_validdata]),
+                                                       verbose=verbose)
+            val_loss = train_history.history['val_loss']
+            print(type(val_loss), val_loss)
+            if val_loss[-1] < best_loss:
+                best_loss = val_loss[-1]
+                cnt = 0
+                best_weights = self.density_estimator.get_weights()
+            else:
+                cnt += 1
+            if cnt >= config.patience:
+                break
 
-            for i in range(0, config.fit_iter):
-                self.autoencoder.fit(x=[reped_traindata, reped_state_train],
-                                     y=[reped_traindata],
-                                     epochs=config.num_of_epochs,
-                                     batch_size=config.batch_size,
-                                     shuffle=True,
-                                     validation_data=([reped_validdata, reped_state_valid],
-                                                      [reped_validdata]),
-                                     callbacks=[early_stop],
-                                     verbose=1)
+        if config.use_best_validated_weights:
+            self.density_estimator.set_weights(best_weights)
+        if i < config.num_of_epochs and verbose > 0:
+            print('Epoch %05d: early stopping' % (config.num_of_epochs + 1))
+
+
+
+    # def fit(self, train_data, validation_data):
+    #
+    #     early_stop = MyEarlyStopping(self.autoencoder, monitor='val_loss', min_delta=-0.0, patience=config.patience, verbose=1, mode='auto',
+    #                                  train_end_epochs=self.train_end_epochs)
+    #
+    #     if config.fast_train == True:
+    #         validation_size = validation_data.shape[0]
+    #         reped_state_valid = (np.arange(validation_size * config.num_of_all_masks) / validation_size).astype(
+    #             np.int32)
+    #         reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
+    #
+    #         for i in range(0, config.fit_iter):
+    #             train_size = train_data.shape[0]
+    #             reped_state_train = np.random.randint(0, config.num_of_all_masks, train_size)
+    #             reped_traindata = train_data
+    #             self.autoencoder.fit(x=[reped_traindata, reped_state_train],
+    #                                  y=[reped_traindata],
+    #                                  epochs=config.num_of_epochs,
+    #                                  batch_size=config.batch_size,
+    #                                  shuffle=True,
+    #                                  validation_data=([reped_validdata, reped_state_valid],
+    #                                                   [reped_validdata]),
+    #                                  callbacks=[early_stop],
+    #                                  verbose=1)
+    #
+    #     else:
+    #         train_size = train_data.shape[0]
+    #         reped_state_train = (np.arange(train_size * config.num_of_all_masks) / train_size).astype(np.int32)
+    #         reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
+    #         validation_size = validation_data.shape[0]
+    #         reped_state_valid = (np.arange(validation_size*config.num_of_all_masks)/validation_size).astype(np.int32)
+    #         reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
+    #
+    #         for i in range(0, config.fit_iter):
+    #             self.autoencoder.fit(x=[reped_traindata, reped_state_train],
+    #                                  y=[reped_traindata],
+    #                                  epochs=config.num_of_epochs,
+    #                                  batch_size=config.batch_size,
+    #                                  shuffle=True,
+    #                                  validation_data=([reped_validdata, reped_state_valid],
+    #                                                   [reped_validdata]),
+    #                                  callbacks=[early_stop],
+    #                                  verbose=1)
 
     def predict(self, test_data, pixelwise=False):
+
+        if config.use_uniform_noise_for_pmf:
+            test_data = test_data + np.random.rand(np.prod(test_data.shape)).reshape(test_data.shape) / 256
+
+        if config.use_cnn:
+            test_data = self.cnn_model.predict(test_data)
+            model = self.autoencoder
+        else:
+            model = self.density_estimator
 
         def _logistic_cdf_numpy(y, mu, s):
             y_altered = y.copy()
@@ -579,12 +682,12 @@ class MADE:
         #     noisy_test_data = noisy_test_data + np.random.rand(np.prod(noisy_test_data.shape)).reshape(noisy_test_data.shape) / 256
 
         for j in range(config.num_of_all_masks):
-            made_predict = self.autoencoder.predict([test_data, j * np.ones([test_size,1])])#.reshape(1, hlayer_size, graph_size)]
+            made_predict = model.predict([test_data, j * np.ones([test_size, 1])])#.reshape(1, hlayer_size, graph_size)]
 
             tmp_sz = config.num_mixture_components * config.graph_size
             made_predict_mu = made_predict[ :, :tmp_sz]
             made_predict_logVar = made_predict[ :, tmp_sz:2*tmp_sz]
-            made_predict_logpi_unnormalized = made_predict[ :, 2*tmp_sz:]
+            made_predict_logpi_unnormalized = made_predict[ :, 2*tmp_sz:3*tmp_sz]
 
             # if config.use_uniform_noise_for_pmf:
             #     made_predict_mu = np.tile(made_predict_mu, [config.num_noisy_samples_per_sample, 1])
@@ -619,7 +722,10 @@ class MADE:
                 #     _logistic_cdf_numpy(test_data_tiled*255 - 0.5, made_predict_mu*255, made_predict_s)) + made_predict_logpi
             else:
                 raise Exception('not implemented')
-            log_probs = logsumexp(tmp, axis=1) - np.log(256)
+            log_probs = logsumexp(tmp, axis=1)
+            if config.use_cnn:
+                log_probs = log_probs - np.log(2)
+            log_probs = log_probs - np.log(256)
 
             # eps = 0.00001
             # log_probs[log_probs < np.log(eps)] = np.log(eps)
@@ -643,16 +749,27 @@ class MADE:
 
     ## implemented just for 1 Gaussian (not mixture of Gaussians)
     def generate(self, n):
+        if config.use_cnn:
+            model = self.density_estimator
+        else:
+            model = self.autoencoder
         mask_index = np.random.randint(0,config.num_of_all_masks,n)
         generated_samples = np.zeros([n,config.graph_size])
         all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
         for i in range(config.graph_size):
             ind = (all_pi_nparray[mask_index,:] == i)
-            pred = self.autoencoder.predict([generated_samples, mask_index.reshape([-1,1])])
+            pred = model.predict([generated_samples, mask_index.reshape([-1, 1])])
             mu = pred[ :, :config.graph_size][ind]
             logVar = np.log(np.exp(pred[ :, config.graph_size:2*config.graph_size][ind]) + MIN_VAR)
             generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
-        return generated_samples
+        if not config.use_cnn:
+            return generated_samples
+        generated_pixels = np.zeros(generated_samples.shape)
+        for i in range(config.graph_size):
+            transferred = self.cnn_model.predict(transferred)
+            generated_pixels[:, i] = generated_samples[:, i] - transferred[:, i]
+        return generated_pixels
+
 
 
 
