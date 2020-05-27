@@ -47,7 +47,7 @@ if data_name == 'grid':
 ## mnist configs
 if data_name.startswith('mnist'):
     num_channels = 1
-    width = 28
+    width = 28 * num_channels
     height = 28
     digit = 'All'
     graph_size = width * height

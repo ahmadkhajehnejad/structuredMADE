@@ -162,9 +162,10 @@ class MaskedConvLayer(Layer):
         self.filter_size = filter_size
         super(MaskedConvLayer, self).__init__(**kwargs)
         self._activation = activations.get(activation)
-        self.mask = K.zeros([self.filter_size, self.filter_size], dtype="float32")
-        self.mask[ self.filter_size//2:, :] = 0
-        self.mask[ self.filter_size//2, self.filter_size//2:] = 0
+        mask = np.zeros([self.filter_size, self.filter_size])
+        mask[ (self.filter_size // 2)+1:,:] = 0
+        mask[self.filter_size // 2, self.filter_size // 2:] = 0
+        self.mask = K.constant(mask, dtype="float32")
 
     def build(self, input_shape):
         # Create a trainable weight variable for this layer.
@@ -175,7 +176,7 @@ class MaskedConvLayer(Layer):
                                       trainable=True,
                                       dtype="float32")
         self.b_0 = self.add_weight(name='b_0',
-                                   shape=(self.num_filters),
+                                   shape=(1, self.num_filters),
                                    initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.1, seed=234),
                                    # 'glorot_uniform',
                                    trainable=True,

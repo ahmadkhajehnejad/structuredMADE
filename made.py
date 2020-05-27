@@ -392,7 +392,7 @@ class MADE:
 
     def build_autoencoder(self):
 
-        autoencoder_firstlayers = [MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[0]), 'relu')]
+        autoencoder_firstlayers = []
 
         for i in range(config.num_of_hlayer - 1):
             autoencoder_firstlayers.append(
@@ -435,15 +435,14 @@ class MADE:
             for layer in final_layer_logpi_unnormalized:
                 f_logpi_unnormalized.append(layer([c_pi, st]))
 
-            output = Concatenate()([f_mu, f_logVar, final_layer_logpi_unnormalized])
+            output = Concatenate()(f_mu + f_logVar + f_logpi_unnormalized)
             return output
-
 
         input_layer = Input(shape=(config.graph_size,))
 
         if config.use_cnn:
-            input_layer = Reshape([config.height, config.width/config.num_channels, config.num_channels])(input_layer)
-            cnn1 = MaskedConvLayer(10, 3, 'relu')(input_layer)
+            reshaped_input = Reshape([config.height, config.width // config.num_channels, config.num_channels])(input_layer)
+            cnn1 = MaskedConvLayer(10, 3, 'relu')(reshaped_input)
             cnn2 = MaskedConvLayer(10, 3, 'relu')(cnn1)
             cnn3 = MaskedConvLayer(config.num_channels, 3, 'sigmoid')(cnn2)
             flattened = Flatten()(cnn3)
@@ -452,12 +451,12 @@ class MADE:
         state = Input(shape=(1,), dtype="int32")
 
         if config.use_cnn:
-            density_estimator = Model(inputs=[input_layer, state], outputs=[Concatenate()([get_autoencode(processed_input), processed_input])])
+            density_estimator = Model(inputs=[input_layer, state], outputs=[Concatenate()([get_autoencode(processed_input, state), processed_input])])
             cnn_model = Model(inputs=[input_layer], outputs=[processed_input])
             input_autoencoder = Input(shape=(config.graph_size,))
-            autoencoder = Model(inputs=[input_autoencoder], outputs=[get_autoencode(input_autoencoder)])
+            autoencoder = Model(inputs=[input_autoencoder, state], outputs=[get_autoencode(input_autoencoder, state)])
         else:
-            density_estimator = Model(inputs=[input_layer, state], outputs=[get_autoencode(input_layer)])
+            density_estimator = Model(inputs=[input_layer, state], outputs=[get_autoencode(input_layer, state)])
             cnn_model = None
 
         def normal_loss(y_true, y_pred):
@@ -767,7 +766,7 @@ class MADE:
         generated_pixels = np.zeros(generated_samples.shape)
         for i in range(config.graph_size):
             transferred = self.cnn_model.predict(transferred)
-            generated_pixels[:, i] = generated_samples[:, i] - transferred[:, i]
+            generated_pixels[:, i] = (generated_samples[:, i] - transferred[:, i]) * 2
         return generated_pixels
 
 
