@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Concatenate, Reshape, Flatten, Add, Average
+from keras.layers import Input, Concatenate, Reshape, Flatten, Add, Average, Multiply, Lambda
 import config
 import keras
 from keras import backend as K
@@ -19,7 +19,7 @@ from functools import reduce
 from scipy.special import logsumexp
 
 #### 0-255
-MIN_VAR = 0.0001
+#MIN_VAR = 0.0001
 #MIN_VAR = 1.
 
 def _spread(current_node, root_node, visited, adj, pi):
@@ -441,23 +441,42 @@ class MADE:
         input_layer = Input(shape=(config.graph_size,))
 
         if config.use_cnn:
-            reshaped_input = Reshape([config.height, config.width // config.num_channels, config.num_channels])(input_layer)
-            cnn1 = MaskedConvLayer(10, 3, 'relu')(reshaped_input)
-            cnn2 = MaskedConvLayer(10, 3, 'relu')(cnn1)
-            cnn3 = MaskedConvLayer(config.num_channels, 3, 'sigmoid')(cnn2)
-            flattened = Flatten()(cnn3)
-            processed_input = Average()([flattened, input_layer])
+
+            def get_cnn(inp, last_activation):
+                reshaped_input = Reshape([config.height, config.width // config.num_channels, config.num_channels])(inp)
+
+                l1 = MaskedConvLayer(64, 3, 'relu')(reshaped_input)
+                for block_num in range(30):
+                    l2 = l1
+                    for _ in range(2):
+                        l2 = MaskedConvLayer(64, 3, 'relu')(l2)
+                    l1 = Add()([l1, l2])
+                last = MaskedConvLayer(config.num_channels, 5, last_activation)(l1)
+                flattened = Flatten()(last)
+                return flattened
+
+            s_ = get_cnn(input_layer, last_activation='relu')
+            t_ = get_cnn(input_layer, last_activation='sigmoid')
+            nexp_layer = Lambda(lambda x: K.exp(-x))
+            processed_input = Average()([Multiply()([nexp_layer(s_), input_layer]), t_])
+
+            # cnn1 = MaskedConvLayer(20, 5, 'relu')(reshaped_input)
+            # cnn2 = MaskedConvLayer(20, 5, 'relu')(cnn1)
+            # cnn3 = MaskedConvLayer(20, 3, 'relu')(cnn2)
+            # cnn4 = MaskedConvLayer(20, 5, 'relu')(cnn3)
+            # cnn5 = MaskedConvLayer(config.num_channels, 5, 'sigmoid')(cnn4)
+            # flattened = Flatten()(cnn5)
+            # processed_input = Average()([flattened, input_layer])
 
         state = Input(shape=(1,), dtype="int32")
 
         if config.use_cnn:
-            density_estimator = Model(inputs=[input_layer, state], outputs=[Concatenate()([get_autoencode(processed_input, state), processed_input])])
-            cnn_model = Model(inputs=[input_layer], outputs=[processed_input])
+            density_estimator = Model(inputs=[input_layer, state], outputs=[Concatenate()([get_autoencode(processed_input, state), processed_input, s_])])
+            cnn_model = Model(inputs=[input_layer], outputs=[processed_input, s_, t_])
             input_autoencoder = Input(shape=(config.graph_size,))
             autoencoder = Model(inputs=[input_autoencoder, state], outputs=[get_autoencode(input_autoencoder, state)])
         else:
             density_estimator = Model(inputs=[input_layer, state], outputs=[get_autoencode(input_layer, state)])
-            cnn_model = None
 
         def normal_loss(y_true, y_pred):
             tmp_sz = config.num_mixture_components * config.graph_size
@@ -476,7 +495,7 @@ class MADE:
             logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
 
             #### 0-255
-            logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
+            #logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
             # logVar_pred = logVar_pred * np.log(400)
 
             y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
@@ -484,8 +503,6 @@ class MADE:
             tmp = logpi_pred - 0.5 * logVar_pred - 0.5 * np.log(2*np.pi) - 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred)
 
             tmp = K.logsumexp(tmp, axis=1)
-            if config.use_cnn:
-                tmp = tmp - np.log(2)
             tmp = tmp - np.log(256)
             tmp = -K.sum(tmp, axis=1)
 
@@ -499,7 +516,8 @@ class MADE:
             # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
 
         def normal_loss_use_cnn(y_true, y_pred):
-            return normal_loss(y_pred[:, -(config.graph_size):], y_pred[:, : -(config.graph_size)])
+            l = normal_loss(y_pred[:, -(2 * config.graph_size) : -(config.graph_size)], y_pred[:, : -(2 * config.graph_size)])
+            return l - K.sum( -s_ + np.log(0.5), axis=1)
 
         def _logistic_cdf(y, mu, s):
             #### 0-255
@@ -520,7 +538,7 @@ class MADE:
                                                           [1, config.num_mixture_components, 1])
 
             #### 0-255
-            logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
+            #logVar_pred = K.log(K.exp(logVar_pred) + MIN_VAR)
             # logVar_pred = logVar_pred * np.log(400)
 
             s_pred = K.exp(logVar_pred/2) * np.sqrt(3) / np.p
@@ -656,7 +674,7 @@ class MADE:
             test_data = test_data + np.random.rand(np.prod(test_data.shape)).reshape(test_data.shape) / 256
 
         if config.use_cnn:
-            test_data = self.cnn_model.predict(test_data)
+            test_data, s_, _ = self.cnn_model.predict(test_data)
             model = self.autoencoder
         else:
             model = self.density_estimator
@@ -699,7 +717,7 @@ class MADE:
             made_predict_logpi = made_predict_logpi_unnormalized - np.tile(logsumexp(made_predict_logpi_unnormalized, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
 
             #### 0-255
-            made_predict_logVar = np.log(np.exp(made_predict_logVar) + MIN_VAR)
+            #made_predict_logVar = np.log(np.exp(made_predict_logVar) + MIN_VAR)
             # made_predict_logVar = made_predict_logVar * np.log(400)
 
             test_data_tiled = np.tile(np.expand_dims(test_data, 1), [1, config.num_mixture_components, 1])
@@ -723,7 +741,7 @@ class MADE:
                 raise Exception('not implemented')
             log_probs = logsumexp(tmp, axis=1)
             if config.use_cnn:
-                log_probs = log_probs - np.log(2)
+                log_probs = log_probs + ( -s_ + np.log(0.5))
             log_probs = log_probs - np.log(256)
 
             # eps = 0.00001
@@ -749,9 +767,9 @@ class MADE:
     ## implemented just for 1 Gaussian (not mixture of Gaussians)
     def generate(self, n):
         if config.use_cnn:
-            model = self.density_estimator
-        else:
             model = self.autoencoder
+        else:
+            model = self.density_estimator
         mask_index = np.random.randint(0,config.num_of_all_masks,n)
         generated_samples = np.zeros([n,config.graph_size])
         all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
@@ -759,14 +777,15 @@ class MADE:
             ind = (all_pi_nparray[mask_index,:] == i)
             pred = model.predict([generated_samples, mask_index.reshape([-1, 1])])
             mu = pred[ :, :config.graph_size][ind]
-            logVar = np.log(np.exp(pred[ :, config.graph_size:2*config.graph_size][ind]) + MIN_VAR)
+            #logVar = np.log(np.exp(pred[ :, config.graph_size:2*config.graph_size][ind]) + MIN_VAR)
+            logVar = pred[:, config.graph_size:2 * config.graph_size][ind]
             generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
         if not config.use_cnn:
             return generated_samples
         generated_pixels = np.zeros(generated_samples.shape)
         for i in range(config.graph_size):
-            transferred = self.cnn_model.predict(transferred)
-            generated_pixels[:, i] = (generated_samples[:, i] - transferred[:, i]) * 2
+            _, s_, t_ = self.cnn_model.predict(generated_pixels)
+            generated_pixels[:, i] = (2 * generated_samples[:, i] - t_[:,i]) / np.exp(-s_[:,i])
         return generated_pixels
 
 
