@@ -4,6 +4,7 @@ import numpy as np
 from dataset import get_data
 import config
 from made import MADE
+from patch_made import PatchMADE
 import sys
 from PIL import Image
 
@@ -59,7 +60,10 @@ def execute_one_round(round_num, all_pi, all_masks):
     #         im = Image.fromarray(255*data['train_data'][i,:].reshape([config.height, config.width]))
     #         im.convert('RGB').save(config.generated_samples_dir+'train_' + str(i)+'.png')
 
-    model = MADE(all_pi=all_pi, all_masks=all_masks)
+    if config.patch_MADE == -1:
+        model = MADE(all_pi=all_pi, all_masks=all_masks)
+    else:
+        model = PatchMADE()
 
     print('model initiated')
     
@@ -72,8 +76,8 @@ def execute_one_round(round_num, all_pi, all_masks):
     print('KL: ' + str(res['KL']), file=sys.stderr)
     print('NLL: ' + str(res['NLL']), file=sys.stderr)
     sys.stderr.flush()
-    res['train_end_epochs'] = model.train_end_epochs
-    res['num_of_connections'] = model.num_of_connections()
+    # res['train_end_epochs'] = model.train_end_epochs
+    # res['num_of_connections'] = model.num_of_connections()
 
     if config.generate_samples:
         n = config.num_of_generated_samples_each_execution

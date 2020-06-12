@@ -2,7 +2,7 @@ hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
 num_of_all_masks = 10
 num_of_hlayer = 2
 hlayer_size = 1200
-random_dimensions_order = True # 'grid' # 'grid_from_center' # 
+random_dimensions_order = False # 'grid' # True # 'grid_from_center' #
 direct_links = 'Full'
 algorithm = 'orig' # 'Q_restricted' # 'min_related' # 
 train_size = 300
@@ -18,10 +18,16 @@ from keras import optimizers
 
 use_cnn = True
 
+patch_MADE = 2
+
 component_form = 'Gaussian' # 'logistic' #
 num_mixture_components = 1
+min_var = 0.0001
+logistic_cdf_inf = 10
 use_uniform_noise_for_pmf = True
-num_noisy_samples_per_sample = 100
+# num_noisy_samples_per_sample = 100
+use_logit_preprocess = True
+logit_scale = 0.99
 
 AE_adam = optimizers.Adam(lr=0.001, beta_1=0.1)
 
