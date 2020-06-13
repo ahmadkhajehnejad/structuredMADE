@@ -9,25 +9,16 @@ train_size = 300
 validation_size = 75
 test_size = 5000
 data_name = 'mnist' # ''grid' # 'mnistdps4' # 'binarized_mnist' # 'ocrdp1' # 'k_sparse'
-learn_alpha = False
 random_data = False
-use_best_validated_weights = True
 fast_train = False # True #
-logReg_pretrain = False # True #         
 from keras import optimizers
 
 use_cnn = True
 
-patch_MADE = 2
-
-component_form = 'Gaussian' # 'logistic' #
-num_mixture_components = 1
+component_form = 'logistic' # 'Gaussian' #
+num_mixture_components = 3
 min_var = 0.0001
 logistic_cdf_inf = 10
-use_uniform_noise_for_pmf = True
-# num_noisy_samples_per_sample = 100
-use_logit_preprocess = True
-logit_scale = 0.99
 
 AE_adam = optimizers.Adam(lr=0.001, beta_1=0.1)
 

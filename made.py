@@ -93,17 +93,11 @@ class MADE:
             self.all_masks = all_masks.copy()
             self.all_pi = all_pi.copy()
 
-        #print('avg reaching sizes: ', np.mean(self.reaching_dimesions_num()))
-
-        if config.learn_alpha == True:
-            self.density_estimator, self.density_estimator_2 = self.build_autoencoder()
+        if config.use_cnn:
+            self.density_estimator, self.cnn_model, self.autoencoder, self.input_autoencoder = self.build_autoencoder()
         else:
-            if config.use_cnn:
-                self.density_estimator, self.cnn_model, self.autoencoder, self.input_autoencoder = self.build_autoencoder()
-            else:
-                self.density_estimator = self.build_autoencoder()
-            if config.learn_alpha == 'heuristic':
-                self.alpha = np.zeros([config.num_of_all_masks])
+            self.density_estimator = self.build_autoencoder()
+
         self.train_end_epochs = []
 
     def generate_all_masks(self):
@@ -143,16 +137,16 @@ class MADE:
             all_pi.append(pi)
 
             if self.masking_method == 'Q_restricted':
-                all_masks.append(self._Q_restricted_mask(pi))
+                all_masks.append(self._Q_restricted_mask(np.arange(config.graph_size)))
             elif self.masking_method == 'random_Q_restricted':
-                all_masks.append(self._Q_restricted_mask(pi,random_Q=True))
+                all_masks.append(self._Q_restricted_mask(np.arange(config.graph_size), random_Q=True))
             elif self.masking_method == 'ensemble_Q_restricted_and_orig':
                 if i_m < config.num_of_all_masks // 2:
-                    all_masks.append(self._Q_restricted_mask(pi))
+                    all_masks.append(self._Q_restricted_mask(np.arange(config.graph_size)))
                 else:
-                    all_masks.append(self._normal_mask('orig',pi))
+                    all_masks.append(self._normal_mask('orig',np.arange(config.graph_size)))
             else:
-                all_masks.append(self._normal_mask(self.masking_method,pi))
+                all_masks.append(self._normal_mask(self.masking_method,np.arange(config.graph_size)))
 
         swapped_all_masks = []
         for i in range(config.num_of_hlayer+1):
@@ -379,13 +373,6 @@ class MADE:
         return masks
 
 
-    def num_of_connections(self):
-        cnt = 0
-        for masks in self.all_masks:
-            for mask in masks:
-                cnt += np.sum(mask)
-        return cnt
-
     def build_autoencoder(self):
 
         autoencoder_firstlayers = []
@@ -477,52 +464,6 @@ class MADE:
         else:
             density_estimator = Model(inputs=[input_layer, state], outputs=[get_autoencode(input_layer, state)])
 
-        def normal_loss(y_true, y_pred):
-
-            tmp_sz = config.num_mixture_components * config.graph_size
-            mu_pred, logVar_pred, logpi_unnormalized_pred = y_pred[:, :tmp_sz], y_pred[:, tmp_sz:2*tmp_sz], y_pred[:, 2*tmp_sz:]
-
-            # if config.use_uniform_noise_for_pmf:
-            #     y_true = K.tile(y_true, [config.num_noisy_samples_per_sample, 1])
-            #     y_true = y_true + K.random_uniform(K.shape(y_true)) / 256.0
-            #     mu_pred = K.tile(mu_pred, [config.num_noisy_samples_per_sample, 1])
-            #     logVar_pred = K.tile(logVar_pred, [config.num_noisy_samples_per_sample, 1])
-            #     logpi_unnormalized_pred = K.tile(logpi_unnormalized_pred, [config.num_noisy_samples_per_sample, 1])
-
-            mu_pred = K.reshape(mu_pred, [-1, config.num_mixture_components, config.graph_size])
-            logVar_pred = K.reshape(logVar_pred, [-1, config.num_mixture_components, config.graph_size])
-            logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred, [-1, config.num_mixture_components, config.graph_size])
-            logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True), [1, config.num_mixture_components, 1])
-
-            if config.min_var > 0:
-                logVar_pred = K.log(K.exp(logVar_pred) + config.min_var)
-
-            y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
-
-            tmp = logpi_pred - 0.5 * logVar_pred - 0.5 * np.log(2*np.pi) - 0.5 * K.pow(y_true_tiled - mu_pred, 2) / K.exp(logVar_pred)
-
-            tmp = K.logsumexp(tmp, axis=1)
-            tmp = tmp - np.log(256)
-
-            if config.use_logit_preprocess:
-                k_ = K.exp(y_true) / (1 + K.exp(y_true))
-                tmp += K.log(config.logit_scale/k_ + config.logit_scale/(1-k_))
-
-            tmp = -K.sum(tmp, axis=1)
-
-            # if config.use_uniform_noise_for_pmf:
-            #     tmp = K.reshape(tmp, [config.num_noisy_samples_per_sample, -1])
-            #     return K.logsumexp(tmp, axis=0) - np.log(config.num_noisy_samples_per_sample)
-            return tmp
-
-
-            # barrier = K.pow( 0.5 + keras.activations.sigmoid(10000 * (logVar_pred - 0.0025)), 10 )
-            # return K.sum( 0.5 * K.pow(y_true - mu_pred, 2) / K.exp(logVar_pred) + logVar_pred/2 + barrier, axis=1)
-
-        def normal_loss_use_cnn(y_true, y_pred):
-            l = normal_loss(y_pred[:, -(2 * config.graph_size) : -(config.graph_size)], y_pred[:, : -(2 * config.graph_size)])
-            s_ = y_pred[:, -(config.graph_size):]
-            return l - K.sum( -s_ + np.log(0.5), axis=1)
 
         def _logistic_cdf(y, mu, s):
             y_altered = y + K.cast(y < 0, y.dtype) * -config.logistic_cdf_inf + K.cast(y > 255/256, y.dtype) * config.logistic_cdf_inf
@@ -560,12 +501,7 @@ class MADE:
             return logistic_loss(y_true, y_pred[:, : -(2 * config.graph_size)])
 
 
-        if config.component_form == 'Gaussian':
-            if config.use_cnn:
-                density_estimator.compile(optimizer=config.optimizer, loss=normal_loss_use_cnn)
-            else:
-                density_estimator.compile(optimizer=config.optimizer, loss=normal_loss)
-        elif config.component_form == 'logistic':
+        if config.component_form == 'logistic':
             if config.use_cnn:
                 density_estimator.compile(optimizer=config.optimizer, loss=logistic_loss_use_cnn)
             else:
@@ -578,25 +514,11 @@ class MADE:
         return density_estimator
 
 
-    def _preprocess(self, data_clean):
-        if config.use_uniform_noise_for_pmf:
-            data = data_clean + np.random.rand(np.prod(data_clean.shape)).reshape(data_clean.shape) / 256
-        else:
-            data = data_clean.copy()
-        if config.use_logit_preprocess:
-            data = (((data * 2) - 1) * config.logit_scale + 1) / 2
-            data = np.log(data) - np.log(1 - data)
-        return data
-
-
-    def fit(self, train_data_clean, validation_data_clean):
+    def fit(self, train_data, validation_data):
         cnt = 0
         best_loss = np.Inf
         best_weights = None
         for i in range(config.num_of_epochs):
-
-            train_data = self._preprocess(train_data_clean)
-            validation_data = self._preprocess(validation_data_clean)
 
             validation_size = validation_data.shape[0]
             reped_state_valid = (np.arange(validation_size * config.num_of_all_masks) / validation_size).astype(
@@ -634,56 +556,11 @@ class MADE:
             if cnt >= config.patience:
                 break
 
-        if config.use_best_validated_weights:
-            self.density_estimator.set_weights(best_weights)
+        self.density_estimator.set_weights(best_weights)
         if i < config.num_of_epochs and verbose > 0:
             print('Epoch %05d: early stopping' % (config.num_of_epochs + 1))
 
 
-
-    # def fit(self, train_data, validation_data):
-    #
-    #     early_stop = MyEarlyStopping(self.autoencoder, monitor='val_loss', min_delta=-0.0, patience=config.patience, verbose=1, mode='auto',
-    #                                  train_end_epochs=self.train_end_epochs)
-    #
-    #     if config.fast_train == True:
-    #         validation_size = validation_data.shape[0]
-    #         reped_state_valid = (np.arange(validation_size * config.num_of_all_masks) / validation_size).astype(
-    #             np.int32)
-    #         reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
-    #
-    #         for i in range(0, config.fit_iter):
-    #             train_size = train_data.shape[0]
-    #             reped_state_train = np.random.randint(0, config.num_of_all_masks, train_size)
-    #             reped_traindata = train_data
-    #             self.autoencoder.fit(x=[reped_traindata, reped_state_train],
-    #                                  y=[reped_traindata],
-    #                                  epochs=config.num_of_epochs,
-    #                                  batch_size=config.batch_size,
-    #                                  shuffle=True,
-    #                                  validation_data=([reped_validdata, reped_state_valid],
-    #                                                   [reped_validdata]),
-    #                                  callbacks=[early_stop],
-    #                                  verbose=1)
-    #
-    #     else:
-    #         train_size = train_data.shape[0]
-    #         reped_state_train = (np.arange(train_size * config.num_of_all_masks) / train_size).astype(np.int32)
-    #         reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
-    #         validation_size = validation_data.shape[0]
-    #         reped_state_valid = (np.arange(validation_size*config.num_of_all_masks)/validation_size).astype(np.int32)
-    #         reped_validdata = np.tile(validation_data, [config.num_of_all_masks, 1])
-    #
-    #         for i in range(0, config.fit_iter):
-    #             self.autoencoder.fit(x=[reped_traindata, reped_state_train],
-    #                                  y=[reped_traindata],
-    #                                  epochs=config.num_of_epochs,
-    #                                  batch_size=config.batch_size,
-    #                                  shuffle=True,
-    #                                  validation_data=([reped_validdata, reped_state_valid],
-    #                                                   [reped_validdata]),
-    #                                  callbacks=[early_stop],
-    #                                  verbose=1)
 
     def predict(self, test_data, pixelwise=False):
         first = 0
@@ -696,21 +573,16 @@ class MADE:
 
     def _predict(self, test_data, pixelwise=False):
 
-        test_data_preprocessed = self._preprocess(test_data)
-
         if config.use_cnn:
-            test_data, s_, _ = self.cnn_model.predict(test_data_preprocessed)
+            test_data, s_, _ = self.cnn_model.predict(test_data)
             model = self.autoencoder
         else:
-            test_data = test_data_preprocessed
             model = self.density_estimator
 
         def _logistic_cdf_numpy(y, mu, s):
             y_altered = y.copy()
             y_altered[y < 0] = -np.inf
-            #### 0-255
             y_altered[y > 255/256] = np.inf
-            # y_altered[y > 255] = np.inf
             return 1 / (1 + np.exp(-1 * (y_altered - mu) / s))
 
         print('predict start')
@@ -720,9 +592,6 @@ class MADE:
         else:
             all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size, config.graph_size])
 
-        # if config.use_uniform_noise_for_pmf:
-        #     noisy_test_data = np.tile(test_data, [config.num_noisy_samples_per_sample, 1])
-        #     noisy_test_data = noisy_test_data + np.random.rand(np.prod(noisy_test_data.shape)).reshape(noisy_test_data.shape) / 256
 
         for j in range(config.num_of_all_masks):
             made_predict = model.predict([test_data, j * np.ones([test_size, 1])])#.reshape(1, hlayer_size, graph_size)]
@@ -732,10 +601,6 @@ class MADE:
             made_predict_logVar = made_predict[ :, tmp_sz:2*tmp_sz]
             made_predict_logpi_unnormalized = made_predict[ :, 2*tmp_sz:3*tmp_sz]
 
-            # if config.use_uniform_noise_for_pmf:
-            #     made_predict_mu = np.tile(made_predict_mu, [config.num_noisy_samples_per_sample, 1])
-            #     made_predict_logVar = np.tile(made_predict_logVar, [config.num_noisy_samples_per_sample, 1])
-            #     made_predict_logpi_unnormalized = np.tile(made_predict_logpi_unnormalized, [config.num_noisy_samples_per_sample, 1])
 
             made_predict_mu = np.reshape(made_predict_mu, [-1, config.num_mixture_components, config.graph_size])
             made_predict_logVar = np.reshape(made_predict_logVar, [-1, config.num_mixture_components, config.graph_size])
@@ -746,43 +611,15 @@ class MADE:
                 made_predict_logVar = np.log(np.exp(made_predict_logVar) + config.min_var)
 
             test_data_tiled = np.tile(np.expand_dims(test_data, 1), [1, config.num_mixture_components, 1])
-            # if config.use_uniform_noise_for_pmf:
-            #     test_data_tiled = np.tile(np.expand_dims(noisy_test_data, 1), [1, config.num_mixture_components, 1])
-            # else:
-            #     test_data_tiled = np.tile(np.expand_dims(test_data, 1), [1, config.num_mixture_components, 1])
 
-            if config.component_form == 'Gaussian':
-                tmp = -0.5 * (test_data_tiled - made_predict_mu)**2 / np.exp(made_predict_logVar) - made_predict_logVar/2 - np.log(2*np.pi)/2 + made_predict_logpi
-            elif config.component_form == 'logistic':
+            if config.component_form == 'logistic':
                 made_predict_s = np.exp((made_predict_logVar + np.log(3) - 2 * np.log(np.pi)) / 2)
-                #made_predict_s = np.exp(made_predict_logVar / 2) * np.sqrt(3) / np.pi
-                #### 0-255
                 tmp = np.log(
-                    _logistic_cdf_numpy(test_data_tiled + 0.5 / 255, made_predict_mu, made_predict_s) -
-                    _logistic_cdf_numpy(test_data_tiled - 0.5 / 255, made_predict_mu, made_predict_s)) + made_predict_logpi
-                # tmp = np.log(
-                #     _logistic_cdf_numpy(test_data_tiled*255 + 0.5, made_predict_mu*255, made_predict_s) -
-                #     _logistic_cdf_numpy(test_data_tiled*255 - 0.5, made_predict_mu*255, made_predict_s)) + made_predict_logpi
+                    _logistic_cdf_numpy(test_data_tiled + 0.5 / 256, made_predict_mu, made_predict_s) -
+                    _logistic_cdf_numpy(test_data_tiled - 0.5 / 256, made_predict_mu, made_predict_s)) + made_predict_logpi
             else:
                 raise Exception('not implemented')
             log_probs = logsumexp(tmp, axis=1)
-            if config.use_cnn:
-                if config.component_form == 'Gaussian':
-                    log_probs = log_probs + ( -s_ + np.log(0.5))
-            if config.component_form == 'Gaussian':
-                log_probs = log_probs - np.log(256)
-
-            # eps = 0.00001
-            # log_probs[log_probs < np.log(eps)] = np.log(eps)
-            # log_probs[log_probs > np.log(1 - eps)] = np.log(1 - eps)
-
-            # if config.use_uniform_noise_for_pmf:
-            #     log_probs = log_probs.reshape([config.num_noisy_samples_per_sample, test_size, config.graph_size])
-            #     log_probs = logsumexp(log_probs, axis=0) - np.log(config.num_noisy_samples_per_sample)
-
-            if config.use_logit_preprocess:
-                k_ = np.exp(test_data_preprocessed) / (1 + np.exp(test_data_preprocessed))
-                log_probs += np.log(config.logit_scale / k_ + config.logit_scale / (1 - k_))
 
             if not pixelwise:
                 made_log_prob = np.sum(log_probs, axis=1)
@@ -790,60 +627,10 @@ class MADE:
             else:
                 all_masks_log_probs[j,:,:] = log_probs
 
-
-        #res = np.log(np.mean(probs, axis=0))
         res = logsumexp(all_masks_log_probs, axis=0) - np.log(config.num_of_all_masks)
         print('predict finish')
         return res
 
-    ## implemented just for 1 Gaussian (not mixture of Gaussians)
     def generate(self, n):
-        if config.use_cnn:
-            model = self.autoencoder
-        else:
-            model = self.density_estimator
-        mask_index = np.random.randint(0,config.num_of_all_masks,n)
-        generated_samples = np.zeros([n,config.graph_size])
-        all_pi_nparray = np.concatenate([pi.reshape([1,-1]) for pi in self.all_pi], axis=0)
-        for i in range(config.graph_size):
-            ind = (all_pi_nparray[mask_index,:] == i)
-            pred = model.predict([generated_samples, mask_index.reshape([-1, 1])])
-            mu = pred[ :, :config.graph_size][ind]
-            if config.min_var > 0:
-                logVar = np.log(np.exp(pred[ :, config.graph_size:2*config.graph_size][ind]) + config.min_var)
-            else:
-                logVar = pred[:, config.graph_size:2 * config.graph_size][ind]
-            generated_samples[ind] = np.random.normal(mu, np.exp(logVar/2))
-        if not config.use_cnn:
-            return generated_samples
-        generated_pixels = np.zeros(generated_samples.shape)
-        for i in range(config.graph_size):
-            _, s_, t_ = self.cnn_model.predict(generated_pixels)
-            generated_pixels[:, i] = (2 * generated_samples[:, i] - t_[:,i]) / np.exp(-s_[:,i])
-        return generated_pixels
+        pass
 
-
-    def reaching_dimesions_num(self):
-        results = np.zeros([config.num_of_all_masks, config.graph_size])
-        for mask_i in range(config.num_of_all_masks):
-            for i in range(config.graph_size):
-                #print(mask_i, i)
-                mark = np.zeros([config.num_of_hlayer+2, config.hlayer_size])
-                mark[config.num_of_hlayer+1, i] = 1
-                results[mask_i, i] = len(self._get_reaching_dimensions(i, config.num_of_hlayer+1, mark, mask_i))
-        return results
-
-    def _get_reaching_dimensions(self, i, l, mark, mask_i):
-        mark[l, i] = 1
-        if l == 0:
-            return [i]
-        result = []
-        adj = self.all_masks[l-1][mask_i]
-        k = adj.shape[0]
-        if k > config.hlayer_size:
-            k = config.hlayer_size
-            adj = adj[:k, :]
-        for j in range(k):
-            if mark[l-1, j] == 0 and adj[j, i] == 1:
-                result = result + self._get_reaching_dimensions(j, l-1, mark, mask_i)
-        return result
