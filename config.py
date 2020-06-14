@@ -22,8 +22,10 @@ patch_MADE = 2
 
 component_form = 'Gaussian' # 'logistic' #
 num_mixture_components = 1
-min_var = 0.0001
-logistic_cdf_inf = 10
+# min_var = 0.0001
+min_logScale = -7.
+robust = False
+#logistic_cdf_inf = 10
 use_uniform_noise_for_pmf = True
 # num_noisy_samples_per_sample = 100
 use_logit_preprocess = True

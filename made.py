@@ -17,6 +17,7 @@ if config.use_multiprocessing:
 from sklearn.linear_model import LogisticRegression
 from functools import reduce
 from scipy.special import logsumexp
+import tensorflow as tf
 
 def _spread(current_node, root_node, visited, adj, pi):
         visited[current_node]=True
@@ -388,15 +389,17 @@ class MADE:
 
     def build_autoencoder(self):
 
+        activation = 'relu' # 'tanh' # 'elu'
+
         autoencoder_firstlayers = []
 
         for i in range(config.num_of_hlayer - 1):
             autoencoder_firstlayers.append(
-                MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), 'relu'))
+                MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), activation))
 
-        semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')
-        semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')
-        semiFinal_layer_pi = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), 'relu')
+        semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
+        semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
+        semiFinal_layer_pi = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
 
         final_layer_mu = []
         final_layer_logVar = []
@@ -406,7 +409,8 @@ class MADE:
             if config.use_logit_preprocess:
                 final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
             else:
-                final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid'))
+                # final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'sigmoid'))
+                final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
             final_layer_logVar.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
             final_layer_logpi_unnormalized.append(
                 MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
@@ -524,37 +528,54 @@ class MADE:
             s_ = y_pred[:, -(config.graph_size):]
             return l - K.sum( -s_ + np.log(0.5), axis=1)
 
-        def _logistic_cdf(y, mu, s):
-            y_altered = y + K.cast(y < 0, y.dtype) * -config.logistic_cdf_inf + K.cast(y > 255/256, y.dtype) * config.logistic_cdf_inf
-            return 1 / (1 + K.exp(-1*(y_altered - mu)/s))
+        def _logistic_cdf(scaled_centered_d):
+            return tf.nn.sigmoid(scaled_centered_d)
 
         def logistic_loss(y_true, y_pred):
             tmp_sz = config.num_mixture_components * config.graph_size
-            mu_pred, logVar_pred, logpi_unnormalized_pred = y_pred[:, :tmp_sz], y_pred[:, tmp_sz:2 * tmp_sz], y_pred[:,
+            mu_pred, logScale_pred, logpi_unnormalized_pred = y_pred[:, :tmp_sz], y_pred[:, tmp_sz:2 * tmp_sz], y_pred[:,
                                                                                                               2 * tmp_sz:]
 
             mu_pred = K.reshape(mu_pred, [-1, config.num_mixture_components, config.graph_size])
-            logVar_pred = K.reshape(logVar_pred, [-1, config.num_mixture_components, config.graph_size])
+            logScale_pred = K.reshape(logScale_pred, [-1, config.num_mixture_components, config.graph_size])
             logpi_unnormalized_pred = K.reshape(logpi_unnormalized_pred,
                                                 [-1, config.num_mixture_components, config.graph_size])
             logpi_pred = logpi_unnormalized_pred - K.tile(K.logsumexp(logpi_unnormalized_pred, axis=1, keepdims=True),
                                                           [1, config.num_mixture_components, 1])
 
-            if config.min_var > 0:
-                logVar_pred = K.log(K.exp(logVar_pred) + config.min_var)
+            logScale_pred = tf.maximum(logScale_pred, config.min_logScale)
 
-            s_pred = K.exp( (logVar_pred + np.log(3) - 2 * np.log(np.pi)) / 2 )
-
-            # s_pred = K.exp(logVar_pred/2) * np.sqrt(3) / np.p
-
-
+            inv_s_pred = K.exp(-logScale_pred)
 
             y_true_tiled = K.tile(K.expand_dims(y_true, 1), [1, config.num_mixture_components, 1])
 
-            tmp = K.log(_logistic_cdf(y_true_tiled + 0.5/256, mu_pred, s_pred) - _logistic_cdf(y_true_tiled - 0.5/256, mu_pred, s_pred)) + logpi_pred
+            plus_in = inv_s_pred * (y_true_tiled + (1. / 255.) - mu_pred)
+            min_in = inv_s_pred * (y_true_tiled - (1. / 255.) - mu_pred)
 
-            tmp = -1 * K.logsumexp(tmp, axis=1)
-            return K.sum(tmp, axis=1)
+            delta_cdf = _logistic_cdf(plus_in) - _logistic_cdf(min_in)
+
+            log_cdf_plus = plus_in - tf.nn.softplus(plus_in)  # log probability for edge case of 0 (before scaling)
+            log_one_minus_cdf_min = -tf.nn.softplus(min_in)  # log probability for edge case of 255 (before scaling)
+
+            mid_in = inv_s_pred * (y_true_tiled - mu_pred)
+            log_pdf_mid = mid_in - logScale_pred - 2. * tf.nn.softplus(
+                mid_in)  # log probability in the center of the bin, to be used in extreme cases (not actually used in our code)
+
+
+            if config.robust:
+                tmp = tf.where(y_true_tiled < -0.999, log_cdf_plus,
+                               tf.where(y_true_tiled > 0.999, log_one_minus_cdf_min,
+                                        tf.where(delta_cdf > 1e-5, tf.log(tf.maximum(delta_cdf, 1e-12)),
+                                                 log_pdf_mid - np.log(127.5))))
+            else:
+                tmp = tf.where(y_true_tiled < -0.999, log_cdf_plus,
+                               tf.where(y_true_tiled > 0.999, log_one_minus_cdf_min,
+                                        tf.log(tf.maximum(delta_cdf, 1e-12))))
+
+            tmp = tmp + logpi_pred
+
+            tmp = K.logsumexp(tmp, axis=1)
+            return -1 * K.sum(tmp, axis=1)
 
         def logistic_loss_use_cnn(y_true, y_pred):
             return logistic_loss(y_true, y_pred[:, : -(2 * config.graph_size)])
@@ -586,10 +607,13 @@ class MADE:
         if config.use_logit_preprocess:
             data = (((data * 2) - 1) * config.logit_scale + 1) / 2
             data = np.log(data) - np.log(1 - data)
+        data = ((data * 256) / 255) * 2 - 1
         return data
 
 
     def fit(self, train_data_clean, validation_data_clean):
+
+
         cnt = 0
         best_loss = np.Inf
         best_weights = None
