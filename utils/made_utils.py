@@ -162,7 +162,7 @@ class MaskedConvLayer(Layer):
         self.filter_size = filter_size
         super(MaskedConvLayer, self).__init__(**kwargs)
         self._activation = activations.get(activation)
-        mask = np.zeros([self.filter_size, self.filter_size])
+        mask = np.ones([self.filter_size, self.filter_size])
         mask[ (self.filter_size // 2)+1:,:] = 0
         if include_central_pixel:
             mask[self.filter_size // 2, (self.filter_size // 2) + 1:] = 0

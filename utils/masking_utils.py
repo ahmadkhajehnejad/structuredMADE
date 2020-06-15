@@ -1,5 +1,7 @@
 import config
 import numpy as np
+if config.use_multiprocessing:
+    from multiprocessing import Process, Queue
 
 
 def _spread(current_node, root_node, visited, adj, pi):

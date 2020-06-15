@@ -3,7 +3,7 @@ import config
 from dataset import get_data_structure
 from utils import grid_orders
 from utils.masking_utils import _make_Q, _detect_subsets
-
+import numpy as np
 
 class MADE_base:
     def __init__(self, all_masks=None, all_pi=None):
@@ -197,17 +197,7 @@ class MADE_base:
         return masks
 
     def _normal_mask(self, masking_method, pi):
-        #generating subsets as 3d matrix
-        #subsets = np.random.randint(0, 2, (num_of_hlayer, hlayer_size, graph_size))
-        labels = np.zeros([config.num_of_hlayer, config.hlayer_size], dtype=int)
-        min_label = 0
-        for ii in range(config.num_of_hlayer):
-            labels[ii][:] = np.random.randint(min_label, config.graph_size, (config.hlayer_size))
-            min_label = np.amin(labels[ii])
-        #generating masks as 3d matrix
-        #masks = np.zeros([num_of_hlayer,hlayer_size,hlayer_size])
 
-        masks = []
         if masking_method == 'min_related':
             Q = _make_Q(self.adjacency_matrix, pi)
             min_related_pi = np.zeros([config.graph_size])
@@ -223,32 +213,25 @@ class MADE_base:
         elif masking_method != 'orig':
             raise Exception('Error')
 
-        #first layer mask
-        mask = np.zeros([config.graph_size, config.hlayer_size], dtype=np.float32)
-        for j in range(0, config.hlayer_size):
-            for k in range(0, config.graph_size):
-                if (masking_method == 'orig'):
-                    if (labels[0][j] >= pi[k]):
-                        mask[k][j] = 1.0
-                elif masking_method == 'min_related':
-                    #if ((labels[0][j] >= pi[k]) and (labels[0][j] - related_size <= pi[k])):
-                    if ((labels[0][j] >= pi[k]) and (min_related_pi[ labels[0][j] ] <= pi[k])):
-                        mask[k][j] = 1.0
-                else:
-                    raise Exception("wrong masking method " + masking_method)
-        masks.append(mask)
+        labels = [pi] # np.zeros([config.num_of_hlayer, config.hlayer_size], dtype=int)
+        min_label = 0
+        for _ in range(config.num_of_hlayer):
+            labels.append(np.random.randint(min_label, config.graph_size, (config.hlayer_size)))
+            min_label = np.amin(labels[-1])
+        labels.append(pi)
+
+        masks = []
 
         #hidden layers mask
-        for i in range(1, config.num_of_hlayer):
-            mask = np.zeros([config.hlayer_size, config.hlayer_size], dtype=np.float32)
-            for j in range(0, config.hlayer_size):
-                for k in range(0, config.hlayer_size):
+        for i in range(config.num_of_hlayer):
+            mask = np.zeros([labels[i].size, labels[i+1].size], dtype=np.float32)
+            for j in range(0, labels[i+1].size):
+                for k in range(0, labels[i].size):
                     if (masking_method == 'orig'):
-                        if (labels[i][j] >= labels[i-1][k]):
+                        if (labels[i+1][j] >= labels[i][k]):
                             mask[k][j] = 1.0
                     elif masking_method == 'min_related':
-                        #if ((labels[i][j] >= labels[i-1][k]) and (labels[i][j] - related_size <= labels[i-1][k] )):
-                        if ((labels[i][j] >= labels[i-1][k]) and (min_related_pi[labels[i][j]] <= labels[i-1][k] )):
+                        if ((labels[i+1][j] >= labels[i][k]) and (min_related_pi[labels[i+1][j]] <= labels[i][k] )):
                             mask[k][j] = 1.0
                     else:
                         raise Exception("wrong masking method " + masking_method)
@@ -256,15 +239,14 @@ class MADE_base:
             masks.append(mask)
 
         #last layer mask
-        mask = np.zeros([config.hlayer_size, config.graph_size], dtype=np.float32)
-        for j in range(0, config.graph_size):
-            for k in range(0, config.hlayer_size):
+        mask = np.zeros([labels[-2].size, labels[-1].size], dtype=np.float32)
+        for j in range(0, labels[-1].size):
+            for k in range(0, labels[-2].size):
                 if (masking_method == 'orig'):
-                    if (pi[j] > labels[-1][k]):
+                    if (labels[-1][j] > labels[-2][k]):
                         mask[k][j] = 1.0
                 elif (masking_method == 'min_related'):
-                    #if ((pi[j] > labels[-1][k]) and (pi[j] - related_size <= labels[-1][k])):
-                    if ((pi[j] > labels[-1][k]) and (min_related_pi[pi[j]] <= labels[-1][k])):
+                    if ((labels[-1][j] > labels[-2][k]) and (min_related_pi[labels[-1][j]] <= labels[-2][k])):
                         mask[k][j] = 1.0
                 else:
                     raise Exception("wrong masking method " + masking_method)
@@ -281,15 +263,12 @@ class MADE_base:
                     if config.direct_links == 'Full':
                         tmp_mask[pi < pi[j], j] = 1.0
                     elif config.direct_links == True:
-                        #ind = (((pi < pi[j]) & (pi >= (pi[j] - related_size))))
-                        ind = (((pi < pi[j]) & (pi >= (min_related_pi[pi[j]]))))
+                        ind = (pi < pi[j]) & (pi >= (min_related_pi[pi[j]]))
                         if np.any(ind):
                             tmp_mask[ind, j] = 1.0
                     else:
                         raise Exception('Error' + str(config.direct_links))
-            #print(tmp_mask.shape)
             mask = np.concatenate([mask, tmp_mask],axis=0)
-            #mask = tmp_mask
 
         masks.append(mask)
         return masks

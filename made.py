@@ -15,8 +15,6 @@ import bfs_orders
 #import threading
 from utils.masking_utils import _make_Q, _detect_subsets
 
-if config.use_multiprocessing:
-    from multiprocessing import Process, Queue
 #import sys
 from sklearn.linear_model import LogisticRegression
 from functools import reduce
@@ -36,34 +34,35 @@ class MADE(MADE_base):
 
         autoencoder_firstlayers = []
 
-        for i in range(config.num_of_hlayer - 1):
-            autoencoder_firstlayers.append(
-                MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), activation))
+        if config.num_of_hlayer > 0:
+            for i in range(config.num_of_hlayer - 1):
+                autoencoder_firstlayers.append(
+                    MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[i]), activation))
 
-        semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
-        semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
-        semiFinal_layer_pi = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
+            semiFinal_layer_mu = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
+            semiFinal_layer_sigma = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
+            semiFinal_layer_pi = MaskedDenseLayer(config.hlayer_size, np.array(self.all_masks[-2]), activation)
 
         final_layer_mu = []
         final_layer_logVar = []
         final_layer_logpi_unnormalized = []
 
         for i in range(config.num_mixture_components):
-            if config.use_logit_preprocess:
-                final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
-            else:
-                final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
+            final_layer_mu.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
             final_layer_logVar.append(MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
             final_layer_logpi_unnormalized.append(
                 MaskedDenseLayer(config.graph_size, np.array(self.all_masks[-1]), 'linear'))
 
         def get_autoencode(inp1, inp2, st):
             h = inp1
-            for layer in autoencoder_firstlayers:
-                h = layer([h, st])
-            h_mu = semiFinal_layer_mu([h, st])
-            h_sigma = semiFinal_layer_sigma([h, st])
-            h_pi = semiFinal_layer_pi([h, st])
+            if config.num_of_hlayer > 0:
+                for layer in autoencoder_firstlayers:
+                    h = layer([h, st])
+                h_mu = semiFinal_layer_mu([h, st])
+                h_sigma = semiFinal_layer_sigma([h, st])
+                h_pi = semiFinal_layer_pi([h, st])
+            else:
+                h_mu, h_sigma, h_pi = h, h, h
 
             if config.direct_links:
                 c_mu = Concatenate()([h_mu, inp2])
@@ -87,21 +86,20 @@ class MADE(MADE_base):
 
         if config.use_cnn:
 
-            def get_cnn(inp): #, last_activation):
+            def get_cnn(inp, last_activation):
                 reshaped_input = Reshape([config.height, config.width // config.num_channels, config.num_channels])(inp)
 
-                l1 = MaskedConvLayer(64, 3, 'relu')(reshaped_input)
-                for block_num in range(30):
+                l1 = MaskedConvLayer(64, 3, 'relu', include_central_pixel=True)(reshaped_input)
+                for _ in range(config.num_resnet_blocks):
                     l2 = l1
-                    for _ in range(2):
-                        l2 = MaskedConvLayer(64, 3, 'relu')(l2)
+                    for _ in range(config.size_resnet_block):
+                        l2 = MaskedConvLayer(64, 3, 'relu', include_central_pixel=True)(l2)
                     l1 = Add()([l1, l2])
-                # last = MaskedConvLayer(config.num_channels, 5, last_activation)(l1)
-                last = l1
+                last = MaskedConvLayer(config.num_channels, 5, last_activation, include_central_pixel=True)(l1)
                 flattened = Flatten()(last)
                 return flattened
 
-            processed_input = get_cnn(input_layer)
+            processed_input = get_cnn(input_layer, 'relu')
         else:
             processed_input = input_layer
 
@@ -134,8 +132,6 @@ class MADE(MADE_base):
         return data_permuted
 
     def fit(self, train_data_clean, validation_data_clean):
-
-
         cnt = 0
         best_loss = np.Inf
         best_weights = None
@@ -207,7 +203,7 @@ class MADE(MADE_base):
         all_masks_log_probs = np.zeros([config.num_of_all_masks, test_size])
 
         for j in range(config.num_of_all_masks):
-            stat = j * np.ones([test_size, 1])
+            state = j * np.ones([test_size]).astype(np.int32)
             permuted_test_data = self._get_permuted_data(test_data, state)
             made_predict = self.density_estimator.predict([permuted_test_data, state])
             log_probs = -tf.Session().run(logistic_loss(K.constant(permuted_test_data), K.constant(made_predict)))
