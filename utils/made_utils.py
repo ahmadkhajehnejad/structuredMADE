@@ -155,7 +155,7 @@ class MyEarlyStopping(Callback):
 
 class MaskedConvLayer(Layer):
 
-    def __init__(self, num_filters, filter_size, activation, **kwargs):
+    def __init__(self, num_filters, filter_size, activation, include_central_pixel = False, **kwargs):
         if np.mod(filter_size, 2) == 0:
             raise("Filter size should be an odd integer.")
         self.num_filters = num_filters
@@ -164,7 +164,10 @@ class MaskedConvLayer(Layer):
         self._activation = activations.get(activation)
         mask = np.zeros([self.filter_size, self.filter_size])
         mask[ (self.filter_size // 2)+1:,:] = 0
-        mask[self.filter_size // 2, self.filter_size // 2:] = 0
+        if include_central_pixel:
+            mask[self.filter_size // 2, (self.filter_size // 2) + 1:] = 0
+        else:
+            mask[self.filter_size // 2, self.filter_size // 2:] = 0
         self.mask = K.constant(mask, dtype="float32")
 
     def build(self, input_shape):

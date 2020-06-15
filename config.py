@@ -16,6 +16,8 @@ fast_train = False # True #
 logReg_pretrain = False # True #         
 from keras import optimizers
 
+scale_negOne_to_posOne = True
+
 use_cnn = True
 
 patch_MADE = 2
@@ -42,6 +44,7 @@ num_of_exec = 3
 #fit_iter = 1
 num_of_epochs = 300   #max number of epoch if not reaches the ES condition
 batch_size = 50
+test_batch_size = 1000
 optimizer = AE_adam
 patience = 10
 Q_restricted_2_pass = True
