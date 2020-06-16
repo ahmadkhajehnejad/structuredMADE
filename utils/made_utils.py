@@ -217,7 +217,7 @@ class StatefulMaskedConvLayer(Layer):
         self.num_states = num_states
         self.num_filters = num_filters
         self.filter_size = filter_size
-        super(MaskedConvLayer, self).__init__(**kwargs)
+        super(StatefulMaskedConvLayer, self).__init__(**kwargs)
         self._activation = activations.get(activation)
         mask = np.ones([self.filter_size, self.filter_size])
         mask[ (self.filter_size // 2)+1:,:] = 0
@@ -241,7 +241,7 @@ class StatefulMaskedConvLayer(Layer):
                                    # 'glorot_uniform',
                                    trainable=True,
                                    dtype="float32")
-        super(MaskedConvLayer, self).build(input_shape)  # Be sure to call this somewhere!
+        super(StatefulMaskedConvLayer, self).build(input_shape)  # Be sure to call this somewhere!
 
     def call(self, l):
         x = l[0]
@@ -252,8 +252,7 @@ class StatefulMaskedConvLayer(Layer):
         masked_filters = tf.multiply(self.filters, tiled_mask)
         output = K.conv2d(x, masked_filters, padding="same", data_format="channels_last")
 
-        # batch_size = K.shape(x)[0]
-        batch_size = 2
+        batch_size = K.shape(x)[0]
         input_h = K.shape(x)[1]
         input_w = K.shape(x)[2]
         reshaped_bias = K.reshape( self.b_0, [1, 1, 1, self.num_filters * self.num_states])
@@ -265,11 +264,7 @@ class StatefulMaskedConvLayer(Layer):
 
         ind = tf.tile( tf.reshape(st, [-1,1]), [1,self.num_filters]) * self.num_filters
         ind = ind + tf.cast(tf.tile(tf.reshape(tf.constant(np.arange(self.num_filters)), [1,-1]), [batch_size, 1]), tf.int32)
-        a0 = np.arange(batch_size)
-        a1 = tf.constant(self.num_filters * self.num_states * a0, dtype=tf.int32)
-        a2 = tf.reshape(a1, [-1,1])
-        a3 = tf.tile(a2, [1,self.num_filters])
-        ind = ind + a3
+        ind = ind + tf.tile(tf.reshape(self.num_filters * self.num_states * tf.range(batch_size), [-1,1]), [1,self.num_filters])
 
         output = tf.gather(output, tf.reshape(ind, [-1]))
         output = tf.reshape(output, [batch_size, self.num_filters, input_h, input_w])
