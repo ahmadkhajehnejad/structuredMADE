@@ -2,7 +2,7 @@ hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
 num_of_all_masks = 10
 num_of_hlayer = 2
 hlayer_size = 1200
-random_dimensions_order = False # 'grid' # True # 'grid_from_center' #
+random_dimensions_order = 'grid' # False # True # 'grid_from_center' #
 direct_links = 'Full'
 algorithm = 'orig' # 'Q_restricted' # 'min_related' # 
 train_size = 300
@@ -24,8 +24,8 @@ size_resnet_block = 2
 
 patch_MADE = 2
 
-component_form = 'Gaussian' # 'logistic' #
-num_mixture_components = 1
+component_form = 'logistic' # 'Gaussian' #
+num_mixture_components = 3
 # min_var = 0.0001
 min_logScale = -7.
 robust = False
@@ -60,8 +60,8 @@ if data_name == 'grid':
 ## mnist configs
 if data_name.startswith('mnist'):
     num_channels = 1
-    width = 28 * num_channels
-    height = 28
+    width = 10 # 28 * num_channels
+    height = 10 # 28
     digit = 'All'
     graph_size = width * height
 
