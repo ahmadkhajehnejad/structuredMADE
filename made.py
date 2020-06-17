@@ -6,7 +6,7 @@ import keras
 from keras import backend as K
 
 from utils.made_base import MADE_base
-from utils.made_utils import MaskedDenseLayer, MyEarlyStopping, MaskedConvLayer
+from utils.made_utils import MaskedDenseLayer, MyEarlyStopping, MaskedConvLayer, StatefulMaskedConvLayer
 from dataset import get_data_structure
 #from keras import optimizers
 import keras
@@ -83,6 +83,7 @@ class MADE(MADE_base):
             return output
 
         input_layer = Input(shape=(config.graph_size,))
+        state = Input(shape=(1,), dtype="int32")
 
         if config.use_cnn:
 
@@ -99,11 +100,26 @@ class MADE(MADE_base):
                 flattened = Flatten()(last)
                 return flattened
 
-            processed_input = get_cnn(input_layer, 'relu')
+            def get_stateful_cnn(inp, st, last_activation):
+                reshaped_input = Reshape([config.height, config.width // config.num_channels, config.num_channels])(inp)
+
+                l1 = StatefulMaskedConvLayer(config.num_of_all_masks, 64, 3, 'relu', include_central_pixel=True)([reshaped_input, st])
+                for _ in range(config.num_resnet_blocks):
+                    l2 = l1
+                    for _ in range(config.size_resnet_block):
+                        l2 = StatefulMaskedConvLayer(config.num_of_all_masks, 64, 3, 'relu', include_central_pixel=True)([l2, st])
+                    l1 = Add()([l1, l2])
+                last = StatefulMaskedConvLayer(config.num_of_all_masks, config.num_channels, 5, last_activation, include_central_pixel=True)([l1, st])
+                flattened = Flatten()(last)
+                return flattened
+
+            if config.stateful_cnn:
+                processed_input = get_stateful_cnn(input_layer, state, 'relu')
+            else:
+                processed_input = get_cnn(input_layer, 'relu')
         else:
             processed_input = input_layer
 
-        state = Input(shape=(1,), dtype="int32")
         output = get_autoencode(processed_input, input_layer, state)
 
         density_estimator = Model(inputs=[input_layer, state], outputs=[output])

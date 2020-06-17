@@ -1,6 +1,7 @@
 import keras.backend as K
 import tensorflow as tf
 import config
+import numpy as np
 
 
 def _logistic_cdf(scaled_centered_d):

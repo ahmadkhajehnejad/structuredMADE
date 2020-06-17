@@ -21,6 +21,7 @@ scale_negOne_to_posOne = True
 use_cnn = True
 num_resnet_blocks = 30
 size_resnet_block = 2
+stateful_cnn = True
 
 patch_MADE = 2
 
