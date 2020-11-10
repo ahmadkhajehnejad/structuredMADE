@@ -1,7 +1,7 @@
 import config
 import numpy as np
-import grid_orders
-from made_utils import MaskedDenseLayer
+from utils import grid_orders
+from utils.made_utils import MaskedDenseLayer
 from keras.layers import Input, Concatenate
 from keras.models import Model
 import keras.backend as K

@@ -1,4 +1,5 @@
 hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
+masks_file = 'masks.pkl'
 num_of_all_masks = 10
 num_of_hlayer = 2
 hlayer_size = 1200

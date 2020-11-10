@@ -135,12 +135,12 @@ if __name__=='__main__':
 
     if args.make_masks:
         model = MADE()
-        with open('masks.pkl','wb') as file:
+        with open(config.masks_file,'wb') as file:
             pickle.dump([model.all_pi, model.all_masks], file)
     else:
         all_pi, all_masks = None, None
         if args.load_masks:
-            with open('masks.pkl', 'rb') as file:
+            with open(config.masks_file, 'rb') as file:
                 [all_pi, all_masks] = pickle.load(file)
 
         main(all_pi, all_masks)
