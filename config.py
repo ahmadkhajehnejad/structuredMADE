@@ -19,12 +19,12 @@ from keras import optimizers
 
 scale_negOne_to_posOne = True
 
-use_cnn = True
+use_cnn = False
 num_resnet_blocks = 30
 size_resnet_block = 2
-stateful_cnn = True
+stateful_cnn = False
 
-patch_MADE = 2
+patch_MADE = -1
 
 component_form = 'logistic' # 'Gaussian' #
 num_mixture_components = 3
@@ -32,9 +32,9 @@ num_mixture_components = 3
 min_logScale = -7.
 robust = False
 #logistic_cdf_inf = 10
-use_uniform_noise_for_pmf = True
+use_uniform_noise_for_pmf = False
 # num_noisy_samples_per_sample = 100
-use_logit_preprocess = True
+use_logit_preprocess = False
 logit_scale = 0.99
 
 AE_adam = optimizers.Adam(lr=0.001, beta_1=0.1)
