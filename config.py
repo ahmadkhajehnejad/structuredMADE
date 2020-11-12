@@ -2,14 +2,14 @@ hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
 masks_file = 'masks.pkl'
 num_of_all_masks = 10
 num_of_hlayer = 2
-hlayer_size = 1200
+hlayer_size = 200
 random_dimensions_order = 'grid' # False # True # 'grid_from_center' #
 direct_links = 'Full'
 algorithm = 'orig' # 'Q_restricted' # 'min_related' # 
 train_size = 300
 validation_size = 75
 test_size = 5000
-data_name = 'mnist' # ''grid' # 'mnistdps4' # 'binarized_mnist' # 'ocrdp1' # 'k_sparse'
+data_name = 'mnist' # 'ocr' # ''grid' # 'mnistdps4' # 'binarized_mnist' # 'ocrdp1' # 'k_sparse'
 learn_alpha = False
 random_data = False
 use_best_validated_weights = True
@@ -62,8 +62,8 @@ if data_name == 'grid':
 ## mnist configs
 if data_name.startswith('mnist'):
     num_channels = 1
-    width = 10 # 28 * num_channels
-    height = 10 # 28
+    width =  28 * num_channels
+    height = 28
     digit = 'All'
     graph_size = width * height
 

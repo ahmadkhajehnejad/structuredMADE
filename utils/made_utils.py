@@ -14,7 +14,8 @@ class MaskedDenseLayer(Layer):
     def __init__(self, output_dim, masks ,activation, **kwargs):
         self.output_dim = output_dim
         super(MaskedDenseLayer, self).__init__(**kwargs)
-        self._mask = masks
+        #self._mask = masks
+        self._mask = tf.constant(masks)
         self._activation = activations.get(activation)
 
     def build(self, input_shape):
@@ -38,31 +39,72 @@ class MaskedDenseLayer(Layer):
         bs = K.shape(x)[0]
         ks = K.shape(self.kernel)
 
-        matmul_res = K.zeros([bs, ks[0]])
+
+        '''
+        masks_count = config.num_of_all_masks
+
+        masked_tiled_x = tf.tile( tf.expand_dims(x, 0), [masks_count, 1, 1])
+
         state2d = K.tile(K.reshape(state, [-1, 1]), [1, ks[0]])
-        for i in range(self._mask.shape[0]):
-            masked_x = tf.where(state2d == i, x, 0*x)
-            matmul_res = matmul_res + tf.matmul(masked_x, tf.gather(tf.constant(self._mask), tf.constant(i, dtype=int)))
+        tmp_zeros = tf.zeros([bs, ks[0]])
+        for i in range(masks_count):
+            masked_tiled_x[i,:,:] = tf.where(stated2d == i, x, tmp_zeros)
+
+        #cond = lambda i, out: tf.less(i, masks_count)
+        cond = lambda i, out: i < masks_count
+        
+
+        def loop_body(i, output_prev):
+            masked_x = tf.where(state2d == i, x, tmp_zeros)
+            #return tf.add(i,1), output_prev + tf.matmul(masked_x, tf.gather(self._mask, i))
+            return i + 1, output_prev + tf.matmul(masked_x, tf.gather(self._mask, i))
+
+        _, matmul_res = tf.while_loop(cond, loop_body, [tf.constant(0), tf.zeros([bs,ks[1]], dtype="float32")], parallel_iterations=1)
+
         output = matmul_res + K.tile(self.b_0, [bs, 1])
+        '''
+
+
+
+        masks_count = config.num_of_all_masks
+        
+        #cond = lambda i, out: tf.less(i, masks_count)
+        cond = lambda i, out: i < masks_count
+        
+        state2d = K.tile(K.reshape(state, [-1, 1]), [1, ks[0]])
+        tmp_zeros = tf.zeros([bs, ks[0]])
+        
+        def loop_body(i, output_prev):
+            masked_x = tf.where(state2d == i, x, tmp_zeros)
+            #return tf.add(i,1), output_prev + tf.matmul(masked_x, tf.gather(self._mask, i))
+            return i + 1, output_prev + tf.matmul(masked_x, tf.multiply( tf.gather(self._mask, i), self.kernel))
+        
+        _, matmul_res = tf.while_loop(cond, loop_body, [tf.constant(0), tf.zeros([bs,ks[1]], dtype="float32")], parallel_iterations=1)
+        
+        output = matmul_res + K.tile(self.b_0, [bs, 1])
+
+
+
+
 
         # tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(state,[-1]))
         # masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
         # output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
         # output = K.reshape(output,[bs,self.output_dim]) + K.tile(self.b_0, [bs, 1])
 
-        # i = tf.constant(0)
-        # cond = lambda i, out: tf.less(i, bs)
+        #i = tf.constant(0)
+        #cond = lambda i, out: tf.less(i, bs)
         #
-        # def loop_body(i, output):
-        #     # tmp_mask = tf.reshape( tf.gather(tf.constant(self._mask, dtype="int32"), state[i]), [ks[0]] )
-        #     # tmp_mask_bin = tf.mod(tf.bitwise.right_shift(tf.expand_dims(tmp_mask, 1), tf.range(ks[1])), 2)
-        #     # masked = tf.multiply(self.kernel, tf.cast( tmp_mask_bin, dtype="float32"))
-        #     tmp_mask = tf.gather(tf.constant(self._mask, dtype="float32"), K.reshape(state, [-1])[i])
-        #     masked = tf.multiply(self.kernel, tmp_mask)
-        #     new_output = tf.reshape(tf.matmul(K.reshape(x[i, :], [1, ks[0]]), masked), [1, -1])
-        #     return tf.add(i,1), tf.concat([ tf.gather( output, tf.range(i)), new_output, tf.gather( output, tf.range(i+1, bs))], axis=0)
+        #def loop_body(i, output):
+        #    # tmp_mask = tf.reshape( tf.gather(tf.constant(self._mask, dtype="int32"), state[i]), [ks[0]] )
+        #    # tmp_mask_bin = tf.mod(tf.bitwise.right_shift(tf.expand_dims(tmp_mask, 1), tf.range(ks[1])), 2)
+        #    # masked = tf.multiply(self.kernel, tf.cast( tmp_mask_bin, dtype="float32"))
+        #    tmp_mask = tf.gather(tf.constant(self._mask, dtype="float32"), K.reshape(state, [-1])[i])
+        #    masked = tf.multiply(self.kernel, tmp_mask)
+        #    new_output = tf.reshape(tf.matmul(K.reshape(x[i, :], [1, ks[0]]), masked), [1, -1])
+        #    return tf.add(i,1), tf.concat([ tf.gather( output, tf.range(i)), new_output, tf.gather( output, tf.range(i+1, bs))], axis=0)
         #
-        # _, output = tf.while_loop(cond, loop_body, [i, tf.zeros([bs,ks[1]], dtype="float32")], parallel_iterations=1)
+        #_, output = tf.while_loop(cond, loop_body, [i, tf.zeros([bs,ks[1]], dtype="float32")], parallel_iterations=1)
 
         return self._activation(output) 
 
