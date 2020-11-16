@@ -8,7 +8,7 @@ import numpy as np
 class MADE_base:
     def __init__(self, all_masks=None, all_pi=None):
         self.masking_method = config.algorithm
-        if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related']) or \
+        if (self.masking_method in ['Q_restricted', 'random_Q_restricted' , 'ensemble_Q_restricted_and_orig', 'min_related', 'easy_Q']) or \
                 (config.random_dimensions_order in ['bfs']) or \
                 (str(config.random_dimensions_order).endswith('bfs-random')):
             parameters = get_data_structure()
@@ -26,6 +26,8 @@ class MADE_base:
         all_pi = []
 
         for i_m in range(0,config.num_of_all_masks):
+
+            print('maks ', i_m)
 
             if config.random_dimensions_order == False:
                 pi = np.arange(config.graph_size)
@@ -210,6 +212,11 @@ class MADE_base:
             for i in reversed(range(config.graph_size-1)):
                 min_related_pi[i] = min(min_related_pi[i], min_related_pi[i+1])
             #related_size = pi - min_related_pi
+        elif masking_method == 'easy_Q':
+            Q = _make_Q(self.adjacency_matrix, pi)
+            pi_Q_pi = dict()
+            for i in range(config.graph_size):
+                pi_Q_pi[pi[i]] = pi[Q[i]]
         elif masking_method != 'orig':
             raise Exception('Error')
 
@@ -217,7 +224,11 @@ class MADE_base:
         min_label = 0
         for _ in range(config.num_of_hlayer):
             labels.append(np.random.randint(min_label, config.graph_size, (config.hlayer_size)))
-            min_label = np.amin(labels[-1])
+            if masking_method == 'easy_Q':
+                ind = np.random.permutation(config.hlayer_size)
+                labels[-1][ind[:config.graph_size]] = np.arange(config.graph_size)
+            else:
+                min_label = np.amin(labels[-1])
         labels.append(pi)
 
         masks = []
@@ -233,6 +244,9 @@ class MADE_base:
                     elif masking_method == 'min_related':
                         if ((labels[i+1][j] >= labels[i][k]) and (min_related_pi[labels[i+1][j]] <= labels[i][k] )):
                             mask[k][j] = 1.0
+                    elif (masking_method == 'easy_Q'):
+                        if (labels[i][k] == labels[i+1][j]) or (labels[i][k] in pi_Q_pi[labels[i+1][j]]):
+                            mask[k][j] = 1.0
                     else:
                         raise Exception("wrong masking method " + masking_method)
 
@@ -247,6 +261,9 @@ class MADE_base:
                         mask[k][j] = 1.0
                 elif (masking_method == 'min_related'):
                     if ((labels[-1][j] > labels[-2][k]) and (min_related_pi[labels[-1][j]] <= labels[-2][k])):
+                        mask[k][j] = 1.0
+                elif (masking_method == 'easy_Q'):
+                    if (labels[-2][k] in pi_Q_pi[labels[-1][j]]):
                         mask[k][j] = 1.0
                 else:
                     raise Exception("wrong masking method " + masking_method)
@@ -264,6 +281,15 @@ class MADE_base:
                         tmp_mask[pi < pi[j], j] = 1.0
                     elif config.direct_links == True:
                         ind = (pi < pi[j]) & (pi >= (min_related_pi[pi[j]]))
+                        if np.any(ind):
+                            tmp_mask[ind, j] = 1.0
+                    else:
+                        raise Exception('Error' + str(config.direct_links))
+                elif masking_method == 'easy_Q':
+                    if (config.direct_links == 'Full'):
+                        tmp_mask[pi < pi[j], j] = 1.0
+                    elif (config.direct_links == True):
+                        ind = np.array([True if p in pi_Q_pi[pi[j]] else False for p in pi])
                         if np.any(ind):
                             tmp_mask[ind, j] = 1.0
                     else:

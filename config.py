@@ -2,22 +2,22 @@ hdf5_file_name = 'grid_tr1000_val250_test5000.hdf5'
 masks_file = 'masks.pkl'
 num_of_all_masks = 10
 num_of_hlayer = 2
-hlayer_size = 200
+hlayer_size = 1200
 random_dimensions_order = 'grid' # False # True # 'grid_from_center' #
-direct_links = 'Full'
-algorithm = 'orig' # 'Q_restricted' # 'min_related' # 
-train_size = 300
-validation_size = 75
+direct_links = 'Full' 
+algorithm = 'Q_restricted' # 'easy_Q' # 'orig' # 'min_related' # 
+train_size = 100
+validation_size = 25
 test_size = 5000
-data_name = 'mnist' # 'ocr' # ''grid' # 'mnistdps4' # 'binarized_mnist' # 'ocrdp1' # 'k_sparse'
+data_name = 'mnistdps4' # 'mnist' # 'ocr' # ''grid' # 'binarized_mnist' # 'ocrdp1' # 'k_sparse'
 learn_alpha = False
-random_data = False
+random_data = True
 use_best_validated_weights = True
 fast_train = False # True #
 logReg_pretrain = False # True #         
 from keras import optimizers
 
-scale_negOne_to_posOne = True
+scale_negOne_to_posOne = False
 
 use_cnn = False
 num_resnet_blocks = 30
@@ -37,7 +37,7 @@ use_uniform_noise_for_pmf = False
 use_logit_preprocess = False
 logit_scale = 0.99
 
-AE_adam = optimizers.Adam(lr=0.001, beta_1=0.1)
+AE_adam = optimizers.Adam(lr=0.01, beta_1=0.1)
 
 ## General configs
 use_multiprocessing = True

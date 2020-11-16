@@ -1,5 +1,6 @@
 import config
 import numpy as np
+import sys
 if config.use_multiprocessing:
     from multiprocessing import Process, Queue
 
