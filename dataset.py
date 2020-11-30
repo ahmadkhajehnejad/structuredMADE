@@ -5,7 +5,7 @@ from PIL import Image
 
 def _get_data_from_file(args):
     
-    with np.load(args['data_file']) as parameters:
+    with np.load(args['data_file'], allow_pickle=True) as parameters:
         
         all_outcomes = parameters['all_outcomes']
         prob_of_outcomes = parameters['prob_of_outcomes']
@@ -57,15 +57,6 @@ def _get_data_from_file(args):
                 test_data_probs = data_probs[0:args['test_size']]
             else:
                 test_data_probs = None
-
-    # if config.use_uniform_noise_for_pmf:
-    #     [train_data, valid_data, test_data] = [
-    #         np.tile(x, [config.num_noisy_samples_per_sample, 1]) +
-    #         np.random.rand(x.shape[0] * config.num_noisy_samples_per_sample * x.shape[1]).reshape(
-    #             [x.shape[0] * config.num_noisy_samples_per_sample, x.shape[1]]
-    #         ) / 256
-    #         for x in [train_data, valid_data, test_data]
-    #     ]
 
     return {'train_data' : train_data,
             'train_data_probs' : train_data_probs,
@@ -348,3 +339,4 @@ def get_data_structure():
 #print(data['train_data'].shape[0])
 #print(data['valid_data'].shape[0])
 #print(data['test_data'].shape[0])
+

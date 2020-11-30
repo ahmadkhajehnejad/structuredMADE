@@ -140,12 +140,12 @@ class MADE(MADE_base):
         return data
 
 
-    def _get_permuted_data(self, data, state):
-        n = data.shape[0]
-        data_permuted = np.zeros(data.shape)
-        for i in range(n):
-            data_permuted[i, :] = data[i, np.argsort(self.all_pi[state[i]])]
-        return data_permuted
+    #def _get_permuted_data(self, data, state):
+    #    n = data.shape[0]
+    #    data_permuted = np.zeros(data.shape)
+    #    for i in range(n):
+    #        data_permuted[i, :] = data[i, np.argsort(self.all_pi[state[i]])]
+    #    return data_permuted
 
     def fit(self, train_data_clean, validation_data_clean):
         cnt = 0
@@ -170,19 +170,27 @@ class MADE(MADE_base):
                 reped_state_train = (np.arange(train_size * config.num_of_all_masks) / train_size).astype(np.int32)
                 reped_traindata = np.tile(train_data, [config.num_of_all_masks, 1])
 
-            permuted_reped_traindata = self._get_permuted_data(reped_traindata, reped_state_train)
-            permuted_reped_validdata = self._get_permuted_data(reped_validdata, reped_state_valid)
+            #permuted_reped_traindata = self._get_permuted_data(reped_traindata, reped_state_train)
+            #permuted_reped_validdata = self._get_permuted_data(reped_validdata, reped_state_valid)
 
             verbose = 1
             if verbose > 0:
                 print('## Epoch:', i)
-            train_history = self.density_estimator.fit(x=[permuted_reped_traindata, reped_state_train],
-                                                       y=[permuted_reped_traindata],
+            #train_history = self.density_estimator.fit(x=[permuted_reped_traindata, reped_state_train],
+            #                                           y=[permuted_reped_traindata],
+            #                                           epochs=1,
+            #                                           batch_size=config.batch_size,
+            #                                           shuffle=True,
+            #                                           validation_data=([permuted_reped_validdata, reped_state_valid],
+            #                                      [permuted_reped_validdata]),
+            #                                           verbose=verbose)
+            train_history = self.density_estimator.fit(x=[reped_traindata, reped_state_train],
+                                                       y=[reped_traindata],
                                                        epochs=1,
                                                        batch_size=config.batch_size,
                                                        shuffle=True,
-                                                       validation_data=([permuted_reped_validdata, reped_state_valid],
-                                                  [permuted_reped_validdata]),
+                                                       validation_data=([reped_validdata, reped_state_valid],
+                                                  [reped_validdata]),
                                                        verbose=verbose)
             val_loss = train_history.history['val_loss']
             print(type(val_loss), val_loss)
@@ -220,9 +228,11 @@ class MADE(MADE_base):
 
         for j in range(config.num_of_all_masks):
             state = j * np.ones([test_size]).astype(np.int32)
-            permuted_test_data = self._get_permuted_data(test_data, state)
-            made_predict = self.density_estimator.predict([permuted_test_data, state])
-            log_probs = -tf.Session().run(logistic_loss(K.constant(permuted_test_data), K.constant(made_predict)))
+            #permuted_test_data = self._get_permuted_data(test_data, state)
+            #made_predict = self.density_estimator.predict([permuted_test_data, state])
+            #log_probs = -tf.Session().run(logistic_loss(K.constant(permuted_test_data), K.constant(made_predict)))
+            made_predict = self.density_estimator.predict([test_data, state])
+            log_probs = -tf.Session().run(logistic_loss(K.constant(test_data), K.constant(made_predict)))
             all_masks_log_probs[j,:] = log_probs
 
         res = logsumexp(all_masks_log_probs, axis=0) - np.log(config.num_of_all_masks)
@@ -253,3 +263,4 @@ class MADE(MADE_base):
             _, s_, t_ = self.cnn_model.predict(generated_pixels)
             generated_pixels[:, i] = (2 * generated_samples[:, i] - t_[:,i]) / np.exp(-s_[:,i])
         return generated_pixels
+

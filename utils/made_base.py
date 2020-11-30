@@ -27,6 +27,8 @@ class MADE_base:
 
         for i_m in range(0,config.num_of_all_masks):
 
+            print('mask', i_m)
+
             if config.random_dimensions_order == False:
                 pi = np.arange(config.graph_size)
             elif config.random_dimensions_order == True:
@@ -57,7 +59,7 @@ class MADE_base:
                 raise Exception('Error')
             all_pi.append(pi)
 
-            pi = np.arange(config.graph_size)  ## We run the permutation on the data, not the labels of the first and last layer
+            ################### pi = np.arange(config.graph_size)  ## We run the permutation on the data, not the labels of the first and last layer
             if self.masking_method == 'Q_restricted':
                 all_masks.append(self._Q_restricted_mask(pi))
             elif self.masking_method == 'random_Q_restricted':

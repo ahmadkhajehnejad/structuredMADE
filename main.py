@@ -15,6 +15,9 @@ import argparse
 import pickle
 import os
 
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+#os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 tf_config = tf.ConfigProto()
 tf_config.gpu_options.allow_growth=True
 sess = tf.Session(config=tf_config)
@@ -144,4 +147,5 @@ if __name__=='__main__':
                 [all_pi, all_masks] = pickle.load(file)
 
         main(all_pi, all_masks)
+
 

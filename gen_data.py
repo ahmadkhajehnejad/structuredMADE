@@ -190,11 +190,11 @@ def gen_data(args):
 #gen_data({'data_name' : 'k_sparse', 'n' : 20, 'sparsity_degree' : 3, 'train_size' : 20000, 'test_size' : 100000})
 #gen_data({'data_name' : 'rcv1'})
 
-for d in range(10):
-    print(d)
-    gen_data({'data_name' : 'mnist', 'digit' : d})
+#for d in range(10):
+#    print(d)
+#    gen_data({'data_name' : 'mnist', 'digit' : d})
 
-# gen_data({'data_name' : 'cifar10'})
+gen_data({'data_name' : 'cifar10'})
 
 #gen_data({'data_name' : 'BayesNet', 'n' : 100, 'par_num' : 5, 'train_size' : 20000, 'test_size' : 20000})
 

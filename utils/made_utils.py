@@ -38,10 +38,29 @@ class MaskedDenseLayer(Layer):
         bs = K.shape(x)[0]
         ks = K.shape(self.kernel)
 
-        tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(state,[-1]))
-        masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
-        output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
-        output = K.reshape(output,[bs,self.output_dim]) + K.tile(self.b_0, [bs, 1])
+        # '''
+        masks_count = config.num_of_all_masks
+
+        #cond = lambda i, out: tf.less(i, masks_count)
+        cond = lambda i, out: i < masks_count
+
+        state2d = K.tile(K.reshape(state, [-1, 1]), [1, ks[0]])
+        tmp_zeros = tf.zeros([bs, ks[0]])
+
+        def loop_body(i, output_prev):
+            masked_x = tf.where(K.equal(state2d,i), x, tmp_zeros)
+            return i + 1, output_prev + tf.matmul(masked_x, tf.multiply( tf.gather(self._mask, i), self.kernel))
+
+        _, matmul_res = tf.while_loop(cond, loop_body, [tf.constant(0), tf.zeros([bs,ks[1]], dtype="float32")], parallel_iterations=1)
+
+        output = matmul_res + K.tile(self.b_0, [bs, 1])
+        # '''
+
+ 
+        #tmp_mask = tf.gather(tf.constant(self._mask), K.reshape(state,[-1]))
+        #masked = tf.multiply(K.tile(K.reshape(self.kernel,[1,ks[0],ks[1]]),[bs,1,1]), tmp_mask)
+        #output = tf.matmul(K.reshape(x,[bs,1,ks[0]]), masked)
+        #output = K.reshape(output,[bs,self.output_dim]) + K.tile(self.b_0, [bs, 1])
 
         # i = tf.constant(0)
         # cond = lambda i, out: tf.less(i, bs)
@@ -274,3 +293,4 @@ class StatefulMaskedConvLayer(Layer):
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0][0], input_shape[0][1], input_shape[0][2], self.num_filters)
+
