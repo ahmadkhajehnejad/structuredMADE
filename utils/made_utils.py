@@ -82,6 +82,62 @@ class MaskedDenseLayer(Layer):
         return (input_shape[0][0], self.output_dim)
 
 
+class GraphConvLayer(Layer):
+
+    def __init__(self, num_output_features, adj, activation, aggregation='average', normalize=False, use_bias=True, **kwargs):
+        super(GraphConvLayer, self).__init__(**kwargs)
+        self._num_output_features = num_output_features
+        self._adj = tf.constant(adj)
+        self._activation = activations.get(activation)
+        self._aggregation = aggregation
+        self._normalize = normalize
+        self._use_bias = use_bias
+
+    def build(self, input_shape):
+        # Create a trainable weight variable for this layer.
+        num_input_features = input_shape[-1]
+        self.kernel = self.add_weight(name='kernel',
+                                      shape=(num_input_features + self._num_output_features, self._num_output_features),
+                                      initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.1, seed=234),
+                                      # 'glorot_uniform',
+                                      trainable=True,
+                                      dtype="float32")
+        if self.use_bias:
+            self.b_0 = self.add_weight(name='b_0',
+                                       shape=(1, 1, self._num_output_features),
+                                       initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.1, seed=234),
+                                       # 'glorot_uniform',
+                                       trainable=True,
+                                       dtype="float32")
+        super(GraphConvLayer, self).build(input_shape)  # Be sure to call this somewhere!
+
+    def call(self, x):
+
+        bs = K.shape(x)[0]
+        num_nodes = K.shape(self._adj)[0]
+
+        if self._aggregation == 'average':
+            normalized_adj = tf.divide(self._adj, tf.tile(tf.reduce_sum(self._adj, axis=0, keep_dims=True), [num_nodes, 1]))
+            tiled_normalized_adj = tf.tile(tf.expand_dims(normalized_adj, 0), [bs, 1, 1])
+            agg_tmp = tf.matmul( tf.transpose(x, [0, 2, 1]), tiled_normalized_adj)
+            agg = tf.transpose(agg_tmp, [0, 2, 1])
+        else:
+            raise NotImplementedError
+
+        tiled_kernel = tf.tile( tf.expand_dims(self.kernel, 0), [bs, 1, 1])
+        matmul_res = tf.matmul( tf.concat([x,agg], axis=2), tiled_kernel)
+
+        if self._use_bias:
+            output = matmul_res + K.tile(self.b_0, [bs, num_nodes, 1])
+        else:
+            output = matmul_res
+
+        return self._activation(output)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], input_shape[1], self._num_output_features)
+
+
 def negative_log_likelihood_loss(y_true, y_pred):
     return -K.mean(K.log(y_pred))
 
