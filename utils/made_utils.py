@@ -117,7 +117,9 @@ class GraphConvLayer(Layer):
         num_nodes = K.shape(self._adj)[0]
 
         if self._aggregation == 'average':
-            normalized_adj = tf.divide(self._adj, tf.tile(tf.reduce_sum(self._adj, axis=0, keep_dims=True), [num_nodes, 1]))
+            normalized_adj_with_nan = tf.divide(self._adj, tf.tile(tf.reduce_sum(self._adj, axis=0, keep_dims=True), [num_nodes, 1]))
+            normalized_adj = tf.where(tf.is_nan(normalized_adj_with_nan),
+                                      tf.zeros([num_nodes, num_nodes]), normalized_adj_with_nan)
             tiled_normalized_adj = tf.tile(tf.expand_dims(normalized_adj, 0), [bs, 1, 1])
             agg_tmp = tf.matmul( tf.transpose(x, [0, 2, 1]), tiled_normalized_adj)
             agg = tf.transpose(agg_tmp, [0, 2, 1])
