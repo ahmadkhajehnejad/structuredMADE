@@ -97,7 +97,7 @@ class GraphConvLayer(Layer):
         # Create a trainable weight variable for this layer.
         num_input_features = input_shape[-1]
         self.kernel = self.add_weight(name='kernel',
-                                      shape=(num_input_features + self._num_output_features, self._num_output_features),
+                                      shape=(2 * num_input_features, self._num_output_features),
                                       initializer=keras.initializers.RandomNormal(mean=0.0, stddev=0.1, seed=234),
                                       # 'glorot_uniform',
                                       trainable=True,
